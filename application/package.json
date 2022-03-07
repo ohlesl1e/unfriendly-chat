@@ -1,0 +1,18 @@
+{
+  "name": "application",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "server": "npm run dev --prefix client",
+    "client": "npm run dev --prefix server",
+    "req": "npm i && npm i --prefix client && npm i --prefix server",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "keywords": [],
+  "author": "leslie zhou, khanh nguyen, warren singh",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^7.0.0"
+  }
+}
