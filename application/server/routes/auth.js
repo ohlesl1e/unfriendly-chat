@@ -42,8 +42,8 @@ router.post('/login', (req, res) => {
         endpoint: '/auth/login',
         credential: req.body
     });
-    User.findOne({ email: req.body.email }, (err, user) => {
-        if (err || !user || !bcrypt.compare(req.body.password, user.password)) {
+    User.findOne({ email: req.body.email }, async (err, user) => {
+        if (err || !user || bcrypt.hashSync(req.body.password, user.salt) !== user.password) {
             return res.status(403).send({
                 error: 'Incorrect email or password'
             })
