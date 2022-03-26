@@ -1,10 +1,15 @@
 import React from 'react'
 
-function Message(props) {
-  let { userUid, name, message } = props
+const Message = (props) => {
+  let {userUid, name, message, isCurrentUser} = props
   return (
-    <div>Message component</div>
+    <div className='mb-4'>
+      {isCurrentUser ? <p className='mb-0'>You</p> : <p className='mb-0'>{name}</p>}
+      <div className={"alert " + (isCurrentUser ? 'alert-primary' : 'alert-secondary')}>
+        {message}
+      </div>
+    </div>
   )
 }
 
-export default Message
+export default Message;

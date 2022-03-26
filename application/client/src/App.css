@@ -1,4 +1,4 @@
-.App {
+.App h1 {
   text-align: center;
 }
 
@@ -39,4 +39,16 @@
 
 button {
   font-size: calc(10px + 2vmin);
+}
+
+.App .send-button {
+  background-color: white;
+}
+
+.App .send-button:hover {
+  background-color: #6c757d;
+}
+
+.App .mb-6 {
+  margin-bottom: 6rem;
 }
