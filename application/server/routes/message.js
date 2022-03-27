@@ -16,13 +16,6 @@ const Room = mongoose.model('Room', new mongoose.Schema({
 
 const User = mongoose.model('User')
 
-const test = new Room({
-    user: [],
-    key: []
-})
-
-test.save()
-
 router.get('/allrooms', async (req, res) => {
 
     console.log({
@@ -48,32 +41,33 @@ router.get('/allrooms', async (req, res) => {
 
 router.post('/createroom', async (req, res) => {
     const senderID = req.body.sender
-    const receiver = req.body.receiver
     try {
-        const receiverID = await User.findOne({
-            $or: [{ username: receiver }, { email: receiver }]
-        }).projection({ _id: 1 })
-        console.log({ receiverID });
-        if (!receiverID) {
+        const receiver = await User.findOne({
+            $or: [{ username: req.body.receiver }, { email: req.body.receiver }, { _id: req.body.receiver }]
+        })
+        //console.log({ receiver });
+        if (!receiver) {
             return res.status(404).send({ error: 'user not found' })
-        }
-        let room = await Room.where({ user: { $all: [senderID, receiverID._id] } })
-        if (room) {
-            return res.status(302).send({ message: 'room existed' })
-        }
-        room = new Room({
-            user: [senderID, receiverID],
-            key: [],
-        })
-        room.save(err => {
-            if (err) {
-                return res.status(500).send({ error: 'please try again' })
+        } else {
+            let room = await Room.where({ user: { $all: [senderID, receiver._id.toString()] } })
+            console.log(room);
+            if (room.length > 0) {
+                return res.status(302).send({ message: 'room existed' })
             }
-            return res.status(200).send({
-                message: 'room created',
-                roomid: room._id
+            room = new Room({
+                user: [senderID, receiver._id.toString()],
+                key: [],
             })
-        })
+            room.save(err => {
+                if (err) {
+                    return res.status(500).send({ error: 'please try again' })
+                }
+                return res.status(200).send({
+                    message: 'room created',
+                    roomid: room._id
+                })
+            })
+        }
     } catch (error) {
         console.log(error)
         return res.status(500).send({ error: 'internal error' })

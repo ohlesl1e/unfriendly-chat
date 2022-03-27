@@ -1,4 +1,4 @@
-import React, { useState, useEffect }  from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
 
 import axios from 'axios'
@@ -6,21 +6,13 @@ import axios from 'axios'
 export default function Signup() {
   let navigate = useNavigate()
 
+  const usernameRef = useRef('')
+  const emailRef = useRef('')
+  const passwordRef = useRef('')
+
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
-  const handleUsernameChange = (event) => {
-    setUsername(event.target.value)
-  }
-
-  const handleEmailChange = (event) => {
-    setEmail(event.target.value)
-  }
-
-  const handlePasswordChange = (event) => {
-    setPassword(event.target.value)
-  }
 
   const signup = (event) => {
     // prevent page refresh on submit form
@@ -29,17 +21,22 @@ export default function Signup() {
     const user = { username, email, password }
 
     // call server to register new user
-    axios.post('http://localhost:4000/auth/register', user)
+    axios.post('http://localhost:4000/auth/register',
+      {
+        username: usernameRef.current.value,
+        email: emailRef.current.value,
+        password: passwordRef.current.value,
+      }, { withCredentials: true })
       .then((res) => {
         console.log(res.data)
 
         setUsername('')
         setEmail('')
         setPassword('')
-    
+
         // set user to localstorage
         localStorage.setItem("user", JSON.stringify(user));
-    
+
         // redirect to /
         navigate('/')
       }).catch((error) => {
@@ -48,23 +45,23 @@ export default function Signup() {
   }
 
   return (
-    <div className='container' style={{maxWidth: "750px"}}>
+    <div className='container' style={{ maxWidth: "750px" }}>
       <h1>Sign Up</h1>
-      <form className="row g-3">
+      <form className="row g-3" onSubmit={signup}>
         <div className="col-12">
-          <label for="username" className="form-label">Username</label>
-          <input type="text" className="form-control" id="username" placeholder="Enter your username" value={username} onChange={handleUsernameChange} />
+          <label htmlFor="username" className="form-label">Username</label>
+          <input ref={usernameRef} type="text" className="form-control" id="username" placeholder="Enter your username" />
         </div>
         <div className="col-12">
-          <label for="email" className="form-label">Email</label>
-          <input type="email" className="form-control" id="email" placeholder="Enter your email" value={email} onChange={handleEmailChange} />
+          <label htmlFor="email" className="form-label">Email</label>
+          <input ref={emailRef} type="email" className="form-control" id="email" placeholder="Enter your email" />
         </div>
         <div className="col-12">
-          <label for="password" className="form-label">Password</label>
-          <input type="password" className="form-control" id="password" placeholder="Enter password" value={password} onChange={handlePasswordChange} />
+          <label htmlFor="password" className="form-label">Password</label>
+          <input ref={passwordRef} type="password" className="form-control" id="password" placeholder="Enter password" />
         </div>
         <div className="col-12">
-          <button type="submit" className="btn btn-primary" onClick={signup}>Sign Up</button>
+          <button type="submit" className="btn btn-primary">Sign Up</button>
         </div>
       </form>
     </div>
