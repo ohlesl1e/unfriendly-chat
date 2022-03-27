@@ -13,7 +13,9 @@ export default function Login() {
         password: passwordRef.current.value,
       }, { withCredentials: true })
       .then(res => {
-        sessionStorage.setItem('unfriendly_session', res.data)
+        sessionStorage.setItem('unfriendly_session', res.data.session)
+        sessionStorage.setItem('unfriendly_id', res.data.uid)
+        sessionStorage.setItem('unfriendly_user', res.data.username)
       }).catch(error => console.log(error))
   }
 
