@@ -111,33 +111,72 @@ function Room() {
 
   let { id } = useParams()
 
-  return (
-    <div className='container' style={{maxWidth: "750px"}}>
-      <h1>Room {id}</h1>
-      {/* // other user's name --> GET /rooms/:roomId
-      // OR new user's email to chat with --> GET /rooms/new ==> later POST to server to create new room */}
-      <div className='mb-6'>
-        {messages.map(({userUid, name, message}, index) => {
-          return (
-            <Message
-              key={index}
-              userUid={userUid}
-              name={name}
-              message={message}
-              isCurrentUser={userUid == currentUserUid}
-            />
-          )
-        })}
-      </div>
+  // sendMessage = (message) => {
+  //   console.log('sent!');
+  //   let newMessage = {
+  //     userUid: currentUserUid,
+  //     name: 'John',
+  //     message: message,
+  //   }
+  //   messages.push(newMessage)
+  // }
 
-      <div class="input-group fixed-bottom m-auto mb-3" style={{maxWidth: "750px"}}>
-        <input type="text" class="form-control" placeholder="Enter your message..." />
-        <button class="btn btn-outline-secondary send-button" type="button">Send</button>
-      </div>
+  if (id == 'new') {
+    return (
+      <div className='container' style={{maxWidth: "750px"}}>
+        <h1>New Room</h1>
+        <form class="form-floating">
+          <input type="email" class="form-control" id="recipientEmail" placeholder="name@example.com" />
+          <label for="recipientEmail">Recipient's email</label>
+        </form>
+        <div className='mb-6'>
+          {/* {messages.map(({userUid, name, message}, index) => {
+            return (
+              <Message
+                key={index}
+                userUid={userUid}
+                name={name}
+                message={message}
+                isCurrentUser={userUid == currentUserUid}
+              />
+            )
+          })} */}
+        </div>
 
-    </div>  
-
-  )
+        <div class="container input-group fixed-bottom m-auto mb-5" style={{maxWidth: "750px"}}>
+          <input type="text" class="form-control" placeholder="Enter your message..." />
+          <button class="btn btn-outline-secondary send-button" type="button">Send</button>
+        </div>
+      </div>  
+    )
+  } else {
+    return (
+      <div className='container' style={{maxWidth: "750px"}}>
+        <h1>Room {id}</h1>
+        {/* // other user's name --> GET /rooms/:roomId
+        // OR new user's email to chat with --> GET /rooms/new ==> later POST to server to create new room */}
+        <div className='mb-6'>
+          {messages.map(({userUid, name, message}, index) => {
+            return (
+              <Message
+                key={index}
+                userUid={userUid}
+                name={name}
+                message={message}
+                isCurrentUser={userUid == currentUserUid}
+              />
+            )
+          })}
+        </div>
+  
+        <div class="container input-group fixed-bottom m-auto mb-5" style={{maxWidth: "750px"}}>
+          <input type="text" class="form-control" placeholder="Enter your message..." />
+          <button class="btn btn-outline-secondary send-button" type="button">Send</button>
+        </div>
+  
+      </div>  
+    )
+  }
 }
 
 export default Room

@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import logo from './twerk.svg'
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
