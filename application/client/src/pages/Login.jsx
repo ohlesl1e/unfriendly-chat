@@ -1,21 +1,37 @@
-import React from 'react'
+import React, { useRef } from 'react'
+import axios from 'axios'
 
 export default function Login() {
+  const userRef = useRef('')
+  const passwordRef = useRef('')
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    axios.post('http://localhost:4000/auth/login',
+      {
+        user: userRef.current.value,
+        password: passwordRef.current.value,
+      }, { withCredentials: true })
+      .then(res => {
+        sessionStorage.setItem('unfriendly_session', res.data)
+      }).catch(error => console.log(error))
+  }
+
   return (
-    <div className='container' style={{maxWidth: "750px"}}>
+    <div className='container' style={{ maxWidth: "750px" }}>
       <h1>Login</h1>
-      <form class="row g-3">
-        <div class="col-12">
-          <label for="username" class="form-label">Username</label>
-          <input type="text" class="form-control" id="username" placeholder="Enter your username" />
+      <form className="row g-3" onSubmit={handleSubmit}>
+        <div className="col-12">
+          <label htmlFor="username" className="form-label">Username</label>
+          <input ref={userRef} type="text" className="form-control" id="username" placeholder="Enter your username or email" />
         </div>
-        <div class="col-12">
-          <label for="password" class="form-label">Password</label>
-          <input type="password" class="form-control" id="password" placeholder="Enter password" />
+        <div className="col-12">
+          <label htmlFor="password" className="form-label">Password</label>
+          <input ref={passwordRef} type="password" className="form-control" id="password" placeholder="Enter password" />
         </div>
-        <div class="col-12">
-          <button type="submit" class="btn btn-primary">Log In</button>
+        <div className="col-12">
+          <button type="submit" className="btn btn-primary">Log In</button>
         </div>
       </form>
-    </div>  )
+    </div>)
 }

@@ -2,7 +2,6 @@ const router = require('express').Router();
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const csurf = require('csurf')
-//const User = require('./auth').User
 const io = require('socket.io')(8080);
 
 //router.use(csurf())
@@ -85,16 +84,20 @@ router.post('/createroom', async (req, res) => {
 //})
 
 io.on('connection', socket => {
+    console.log("A client has connected");
+    console.log(socket.id);
     const id = socket.handshake.query.roomid
     socket.join(id)
-
-    socket.on('sendmessage', ({ recipients, text }) => {
-        recipients.forEach(recipient => {
-            socket.broadcast.to(recipient).emit('receivemessage', {
-                recipients: recipients,
-                text
-            })
+    console.log(socket.rooms);
+    socket.on('message', ({ receiver, message }) => {
+        console.log({
+            receiver,
+            message
         });
+        socket.broadcast.emit('receive', {
+            receiver,
+            message
+        })
     })
 })
 
