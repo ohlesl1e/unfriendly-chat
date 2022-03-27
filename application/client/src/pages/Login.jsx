@@ -26,18 +26,18 @@ export default function Login() {
     axios.post('http://localhost:4000/auth/login', user)
       .then((res) => {
         console.log(res.data)
+
+        setEmail('')
+        setPassword('')
+    
+        // set user to localstorage
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // redirect to /
+        navigate('/')
       }).catch((error) => {
         console.log(error)
       })
-
-    setEmail('')
-    setPassword('')
-
-    // set user to localstorage
-    localStorage.setItem("user", JSON.stringify(user));
-
-    // redirect to /
-    navigate('/')
   }
 
   return (

@@ -12,7 +12,7 @@ function Room() {
   const [message, setMessage] = useState('');
 
   // TODO - dummy data
-  let currentUserUid = "1"
+  let currentUsername = "test"
   let room = {
     id: "123",
   }
@@ -168,10 +168,9 @@ function Room() {
             return (
               <Message
                 key={index}
-                userUid={userUid}
-                name={name}
+                username={username}
                 message={message}
-                isCurrentUser={userUid == currentUserUid}
+                isCurrentUser={username == currentUsername}
               />
             )
           })} */}
@@ -188,14 +187,13 @@ function Room() {
       <div className='container' style={{maxWidth: "750px"}}>
         <h1>Room {id}</h1>
         <div className='messages-container'>
-          {messages.map(({userUid, name, message}, index) => {
+          {messages.map(({username, message}, index) => {
             return (
               <Message
                 key={index}
-                userUid={userUid}
-                name={name}
+                username={username}
                 message={message}
-                isCurrentUser={userUid == currentUserUid}
+                isCurrentUser={username == currentUsername}
               />
             )
           })}

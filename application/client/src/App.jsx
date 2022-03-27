@@ -8,7 +8,11 @@ import Room from './pages/Room'
 import Signup from './pages/Signup'
 
 function App() {
-    const [user, setUser] = useState()
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem("user");
+        const initialValue = JSON.parse(savedUser);
+        return initialValue || {};
+    })
 
     return (
         // TODO - add log out button in navbar

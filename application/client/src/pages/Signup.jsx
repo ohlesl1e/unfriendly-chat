@@ -9,7 +9,6 @@ export default function Signup() {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [user, setUser] = useState()
 
   const handleUsernameChange = (event) => {
     setUsername(event.target.value)
@@ -33,19 +32,19 @@ export default function Signup() {
     axios.post('http://localhost:4000/auth/register', user)
       .then((res) => {
         console.log(res.data)
+
+        setUsername('')
+        setEmail('')
+        setPassword('')
+    
+        // set user to localstorage
+        localStorage.setItem("user", JSON.stringify(user));
+    
+        // redirect to /
+        navigate('/')
       }).catch((error) => {
         console.log(error)
       })
-
-    setUsername('')
-    setEmail('')
-    setPassword('')
-
-    // set user to localstorage
-    localStorage.setItem("user", JSON.stringify(user));
-
-    // redirect to /
-    navigate('/')
   }
 
   return (
