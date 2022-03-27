@@ -1,6 +1,7 @@
-import React from 'react'
-import { Link } from 'react-router-dom';
-import { FaUser } from 'react-icons/fa';
+import React, { useState, useEffect }  from 'react'
+import axios from 'axios'
+import { Link } from 'react-router-dom'
+import { FaUser } from 'react-icons/fa'
 
 function Home() {
   // TODO - dummy room data
@@ -24,6 +25,8 @@ function Home() {
   ]
 
   return (
+    // TODO - if no user in localstorage --> login page
+    // TODO - else, show all messages page
     <div className='container' style={{maxWidth: "750px"}}>
       <div className='d-flex justify-content-between mb-5'>
         <h1>All Messages</h1>
