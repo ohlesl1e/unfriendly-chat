@@ -49,5 +49,5 @@ export default function Login() {
           <button type="submit" className="btn btn-primary">Log In</button>
         </div>
       </form>
-    </div>  )
+    </div>)
 }

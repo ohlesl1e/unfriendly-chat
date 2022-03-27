@@ -1,12 +1,19 @@
 const express = require('express');
-const app = express();
 const session = require('express-session')
+const MongoDBStore = require('connect-mongodb-session')(session)
 const cors = require('cors');
+
+const app = express();
+const store = new MongoDBStore({
+    uri: 'mongodb://localhost/unfriendlychat',
+    collection: 'sessions',
+})
 
 app.use(cors({
     origin: [
         'http://localhost:3000',
-        'http://localhost*'
+        'http://localhost*',
+        'localhost:3000'
     ],
     methods: ['GET', 'POST'],
     credentials: true,
@@ -16,6 +23,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'nevergonnagiveyouup',
     saveUninitialized: true,
     resave: false,
+    store: store,
     cookie: {
         secure: true
     }
