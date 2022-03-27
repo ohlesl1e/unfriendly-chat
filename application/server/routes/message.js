@@ -15,13 +15,6 @@ const Room = mongoose.model('Room', new mongoose.Schema({
 
 const User = mongoose.model('User')
 
-const test = new Room({
-    user: [],
-    key: []
-})
-
-test.save()
-
 router.get('/allrooms', async (req, res) => {
 
     console.log({

@@ -30,12 +30,16 @@ router.post('/register', (req, res) => {
             return res.status(403).send({ error: error })
         }
         const userInfo = {
+            uid: user._id,
             username: user.username,
             email: user.email
         }
         req.session.user = userInfo
-        
-        return res.status(200).send(req.session.id)
+
+        return res.status(200).send({
+            ...userInfo,
+            session: req.session.id,
+        })
     })
 })
 
@@ -56,7 +60,10 @@ router.post('/login', (req, res) => {
         }
 
         req.session.user = userInfo
-        return res.status(200).send(req.session.id)
+        return res.status(200).send({
+            ...userInfo,
+            session: req.session.id,
+        })
     })
 })
 
