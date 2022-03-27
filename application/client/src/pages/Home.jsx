@@ -48,6 +48,7 @@ function Home() {
     // call server to get rooms for this user
     const result = await axios.get('http://localhost:4000/room/allrooms', { params: { uid: username } })
 
+    console.log(result.data)
     setRooms(result.data.rooms);
   }, [])
 

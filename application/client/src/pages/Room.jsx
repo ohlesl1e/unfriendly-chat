@@ -10,12 +10,11 @@ function Room() {
   const newMessageContainer = useRef()
 
   const [message, setMessage] = useState('');
-
-  // TODO - dummy data
-  let currentUsername = "test"
-  let room = {
-    id: "123",
-  }
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    const initialValue = JSON.parse(savedUser);
+    return initialValue || {};
+  })
 
   // TODO - clean up...
   let testMessages = [
@@ -118,6 +117,7 @@ function Room() {
 
   // TODO - clean up, dont to get messages from db
   const [messages, setMessages] = useState([]);
+  const [otherUsername, setOtherUsername] = useState('');
 
   // room id from url
   let { id } = useParams()
@@ -126,17 +126,41 @@ function Room() {
   function handleOnChange(event) {
     setMessage(event.target.value)
   }
+  
+  const handleOtherUsernameChange = (event) => {
+    setOtherUsername(event.target.value)
+  }
 
-  const sendMessage = (event) => {
+  const sendMessage = async(event) => {
     // prevent page refresh on submit form
     event.preventDefault()
 
     // ignore when input field is empty
     if (message == '') return
 
+    // call server to create new room
+    // if (id == 'new') {
+    //   let room = {
+    //     sender: user.username,
+    //     receiver: otherUsername
+    //   }
+    //   console.log(room)
+    //   try {
+    //       const res = await axios.post('http://localhost:4000/room/createroom', room);
+    //       console.log('calling create roomm...')
+    //       console.log(res.data);
+    //     } catch (err) {
+    //       // Handle Error Here
+    //       console.log('ERROR -- calling create roomm...')
+    //       console.error(err);
+    //   }
+
+    //   // update room id
+    //   id = 'created!'
+    // }
+ 
     let newMessage = {
-      userUid: currentUserUid,
-      name: 'John', // TODO - fix
+      username: user.username,
       message: message,
     }
 
@@ -153,27 +177,33 @@ function Room() {
     // TODO - fix scroll postion...
     // new message scroll into the bottow of thread
     newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
+
+    // socket io stuff
+
   }
 
   if (id == 'new') {
     return (
       <div className='container' style={{maxWidth: "750px"}}>
         <h1>New Room</h1>
-        <form className="form-floating">
-          <input type="text" className="form-control" id="recipientUsername" />
+        <form className="form-floating mb-3">
+          <input type="text" className="form-control" id="recipientUsername" value={otherUsername} onChange={handleOtherUsernameChange} />
           <label for="recipientUsername">Recipient's Username</label>
         </form>
-        <div className='mb-6'>
-          {/* {messages.map(({userUid, name, message}, index) => {
+
+        <div className='messages-container'>
+          {messages.map(({username, message}, index) => {
             return (
               <Message
                 key={index}
                 username={username}
                 message={message}
-                isCurrentUser={username == currentUsername}
+                isCurrentUser={username == user.username}
               />
             )
-          })} */}
+          })}
+
+          <div className='p-5' ref={newMessageContainer}></div>
         </div>
 
         <div className="container input-group fixed-bottom m-auto mb-5" style={{maxWidth: "750px"}}>
@@ -193,7 +223,7 @@ function Room() {
                 key={index}
                 username={username}
                 message={message}
-                isCurrentUser={username == currentUsername}
+                isCurrentUser={username == user.username}
               />
             )
           })}

@@ -29,8 +29,9 @@ router.get('/allrooms', async (req, res) => {
     try {
         const result = await Room.where({ user: uid })
 
+        console.log('getting room...')
         console.log(result);
-
+        
         return res.status(200).send({ rooms: result })
     } catch (error) {
         console.log(error)
