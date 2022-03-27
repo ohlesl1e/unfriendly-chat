@@ -40,22 +40,22 @@ router.get('/allrooms', async (req, res) => {
 })
 
 router.post('/createroom', async (req, res) => {
-    const senderID = req.body.sender
+    // const senderID = req.body.sender
+    const { userId, sessionId } = req.body.sender
     try {
         const receiver = await User.findOne({
-            $or: [{ username: req.body.receiver }, { email: req.body.receiver }, { _id: req.body.receiver }]
+            $or: [{ username: req.body.receiver }, { email: req.body.receiver }]
         })
-        //console.log({ receiver });
         if (!receiver) {
             return res.status(404).send({ error: 'user not found' })
         } else {
-            let room = await Room.where({ user: { $all: [senderID, receiver._id.toString()] } })
+            let room = await Room.where({ user: { $all: [userId, receiver._id.toString()] } })
             console.log(room);
             if (room.length > 0) {
                 return res.status(302).send({ message: 'room existed' })
             }
             room = new Room({
-                user: [senderID, receiver._id.toString()],
+                user: [userId, receiver._id.toString()],
                 key: [],
             })
             room.save(err => {

@@ -115,7 +115,13 @@ function Room() {
     },
   ]
 
-  // TODO - clean up, dont to get messages from db
+  const [userSession, setUserSession] = useState(() => {
+    const userId = sessionStorage.getItem("unfriendly_id")
+    const sessionId = sessionStorage.getItem("unfriendly_session")
+    const session = { userId, sessionId }
+    return session
+  })
+
   const [messages, setMessages] = useState([]);
   const [otherUsername, setOtherUsername] = useState('');
 
@@ -138,26 +144,27 @@ function Room() {
     // ignore when input field is empty
     if (message == '') return
 
+    // TODO - refactor into new func
     // call server to create new room
-    // if (id == 'new') {
-    //   let room = {
-    //     sender: user.username,
-    //     receiver: otherUsername
-    //   }
-    //   console.log(room)
-    //   try {
-    //       const res = await axios.post('http://localhost:4000/room/createroom', room);
-    //       console.log('calling create roomm...')
-    //       console.log(res.data);
-    //     } catch (err) {
-    //       // Handle Error Here
-    //       console.log('ERROR -- calling create roomm...')
-    //       console.error(err);
-    //   }
+    if (id == 'new') {
+      let room = {
+        sender: userSession,
+        receiver: otherUsername
+      }
+      console.log(room)
+      try {
+          const res = await axios.post('http://localhost:4000/room/createroom', room);
+          console.log('calling create roomm...')
+          console.log(res.data);
+        } catch (err) {
+          // Handle Error Here
+          console.log('ERROR -- calling create roomm...')
+          console.error(err);
+      }
 
-    //   // update room id
-    //   id = 'created!'
-    // }
+      // update room id
+      id = 'created!'
+    }
  
     let newMessage = {
       username: user.username,
