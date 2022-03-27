@@ -52,3 +52,7 @@ button {
 .App .mb-6 {
   margin-bottom: 6rem;
 }
+
+.App .messages-container {
+  max-height: calc(100vh - 200px);
+}

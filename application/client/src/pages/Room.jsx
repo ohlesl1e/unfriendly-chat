@@ -1,15 +1,18 @@
-import React, { useState }  from 'react'
+import React, { useState, useRef, useEffect }  from 'react'
+import axios from 'axios'
+
 import {
   useParams
 } from "react-router-dom";
 import { Message } from '../components';
 
-// TODO - use react component
 function Room() {
+  const newMessageContainer = useRef()
+
   const [message, setMessage] = useState('');
 
   // TODO - dummy data
-  let currentUserUid = "1"
+  let currentUsername = "test"
   let room = {
     id: "123",
   }
@@ -114,7 +117,7 @@ function Room() {
   ]
 
   // TODO - clean up, dont to get messages from db
-  const [messages, setMessages] = useState(testMessages);
+  const [messages, setMessages] = useState([]);
 
   // room id from url
   let { id } = useParams()
@@ -124,17 +127,32 @@ function Room() {
     setMessage(event.target.value)
   }
 
-  // handle messaging
-  function sendMessage() {
+  const sendMessage = (event) => {
+    // prevent page refresh on submit form
+    event.preventDefault()
+
+    // ignore when input field is empty
+    if (message == '') return
+
     let newMessage = {
       userUid: currentUserUid,
-      name: 'John',
+      name: 'John', // TODO - fix
       message: message,
     }
 
+    // add new message to thread
     const newMessages = messages.slice()
     newMessages.push(newMessage)
+
+    // update messages thread
     setMessages(newMessages)
+
+    // update message input field
+    setMessage('')
+
+    // TODO - fix scroll postion...
+    // new message scroll into the bottow of thread
+    newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
   }
 
   if (id == 'new') {
@@ -150,10 +168,9 @@ function Room() {
             return (
               <Message
                 key={index}
-                userUid={userUid}
-                name={name}
+                username={username}
                 message={message}
-                isCurrentUser={userUid == currentUserUid}
+                isCurrentUser={username == currentUsername}
               />
             )
           })} */}
@@ -169,25 +186,25 @@ function Room() {
     return (
       <div className='container' style={{maxWidth: "750px"}}>
         <h1>Room {id}</h1>
-        <div className='mb-6'>
-          {messages.map(({userUid, name, message}, index) => {
+        <div className='messages-container'>
+          {messages.map(({username, message}, index) => {
             return (
               <Message
                 key={index}
-                userUid={userUid}
-                name={name}
+                username={username}
                 message={message}
-                isCurrentUser={userUid == currentUserUid}
+                isCurrentUser={username == currentUsername}
               />
             )
           })}
+
+          <div className='p-5' ref={newMessageContainer}></div>
         </div>
-  
+
         <div className="container input-group fixed-bottom m-auto mb-5" style={{maxWidth: "750px"}}>
-        <input type="text" className="form-control" placeholder="Enter your message..." value={message} onChange={handleOnChange} />
+          <input type="text" className="form-control" placeholder="Enter your message..." value={message} onChange={handleOnChange} />
           <button className="btn btn-outline-secondary send-button" type="button" onClick={sendMessage}>Send</button>
         </div>
-  
       </div>  
     )
   }
