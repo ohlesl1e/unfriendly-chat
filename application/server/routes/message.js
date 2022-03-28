@@ -35,7 +35,8 @@ router.get('/allrooms', async (req, res) => {
     try {
         const result = await Room.where({ user: uid }).select('user')
 
-        console.log(result);
+        // console.log(result);
+        // populate the user field
         for (const room of result) {
             await room.populate({ path: 'user', select: 'username' })
         }
@@ -53,21 +54,24 @@ router.post('/createroom', async (req, res) => {
         const receiver = await User.findOne({
             $or: [{ username: req.body.receiver }, { email: req.body.receiver }]
         })
-        //console.log({ receiver });
+        // check if the receiver exist
         if (!receiver) {
             return res.status(404).send({ error: 'user not found' })
         } else {
             let room = await Room.where({ user: { $all: [senderID, receiver._id.toString()] } })
             console.log(room);
+            // check if the room exist
             if (room.length > 0) {
                 return res.status(302).send({ message: 'room existed' })
             }
+
+            // make a new room
             room = new Room({
                 user: [senderID, receiver._id],
                 key: [],
             })
             await room.populate({ path: 'user', select: 'username' })
-            console.log({ users: room.user });
+            // console.log({ users: room.user });
             room.save(err => {
                 if (err) {
                     return res.status(500).send({ error: 'please try again' })
@@ -87,9 +91,30 @@ router.post('/createroom', async (req, res) => {
     }
 })
 
-//router.post('/:roomid', async (req, res) => {
-//
-//})
+
+// call this when you join a room
+router.post('/:roomid', async (req, res) => {
+    try {
+        console.log(req.params.roomid);
+        const room = await Room.findById(req.params.roomid)
+
+        // check if room exists
+        if (room) {
+            await room.populate({ path: 'user', select: 'username' })
+            console.log({ room })
+            return res.status(200).send({
+                message: 'room found',
+                roomid: room._id,
+                user: room.user,
+                key: room.key
+            })
+        }
+        return res.status(404).send({ message: 'room not found' })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ message: 'internal error' })
+    }
+})
 
 io.on('connection', socket => {
     console.log("A client has connected");
