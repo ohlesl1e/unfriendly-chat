@@ -34,9 +34,12 @@ router.get('/allrooms', async (req, res) => {
     try {
         const result = await Room.where({ user: uid })
 
-        console.log('getting room...')
-        console.log(result);
-        
+        // console.log(result);
+        // populate the user field
+        for (const room of result) {
+            await room.populate({ path: 'user', select: 'username' })
+        }
+
         return res.status(200).send({ rooms: result })
     } catch (error) {
         console.log(error)
@@ -51,6 +54,7 @@ router.post('/createroom', async (req, res) => {
         const receiver = await User.findOne({
             $or: [{ username: req.body.receiver }, { email: req.body.receiver }]
         })
+        // check if the receiver exist
         if (!receiver) {
             return res.status(404).send({ error: 'user not found' })
         } else {
@@ -60,7 +64,7 @@ router.post('/createroom', async (req, res) => {
                 return res.status(302).send({ message: 'room existed' })
             }
             room = new Room({
-                user: [userId, receiver._id.toString()],
+                user: [userId, receiver._id],
                 key: [],
             })
             room.save(err => {
