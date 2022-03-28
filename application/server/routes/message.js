@@ -8,17 +8,23 @@ const io = require('socket.io')(8080);
 
 mongoose.connect('mongodb://localhost/unfriendlychat')
 
+const User = mongoose.model('User')
+
 const Room = mongoose.model('Room', new mongoose.Schema({
-    user: { type: Array, required: true },
+    user: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        }],
+        required: true,
+    },
     key: { type: Array, required: true }
 }))
-
-const User = mongoose.model('User')
 
 router.get('/allrooms', async (req, res) => {
 
     console.log({
-        session: req.sessionID,
+        session: req.session,
         uid: req.query.uid
     })
     const uid = req.query.uid
@@ -27,9 +33,12 @@ router.get('/allrooms', async (req, res) => {
         return res.status(404).send({ error: 'please include the uid' })
     }
     try {
-        const result = await Room.where({ user: uid })
+        const result = await Room.where({ user: uid }).select('user')
 
         console.log(result);
+        for (const room of result) {
+            await room.populate({ path: 'user', select: 'username' })
+        }
 
         return res.status(200).send({ rooms: result })
     } catch (error) {
@@ -39,10 +48,10 @@ router.get('/allrooms', async (req, res) => {
 })
 
 router.post('/createroom', async (req, res) => {
-    const senderID = req.body.sender
+    const senderID = req.body.uid
     try {
         const receiver = await User.findOne({
-            $or: [{ username: req.body.receiver }, { email: req.body.receiver }, { _id: req.body.receiver }]
+            $or: [{ username: req.body.receiver }, { email: req.body.receiver }]
         })
         //console.log({ receiver });
         if (!receiver) {
@@ -54,16 +63,21 @@ router.post('/createroom', async (req, res) => {
                 return res.status(302).send({ message: 'room existed' })
             }
             room = new Room({
-                user: [senderID, receiver._id.toString()],
+                user: [senderID, receiver._id],
                 key: [],
             })
+            await room.populate({ path: 'user', select: 'username' })
+            console.log({ users: room.user });
             room.save(err => {
                 if (err) {
                     return res.status(500).send({ error: 'please try again' })
                 }
+
                 return res.status(200).send({
                     message: 'room created',
-                    roomid: room._id
+                    roomid: room._id,
+                    user: room.user,
+                    key: room.key
                 })
             })
         }
