@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
-const csurf = require('csurf')
+const csurf = require('csurf');
+const { cleanXSS } = require('../util/input_validation');
 
 //router.use(csurf())
 
@@ -17,6 +18,8 @@ const User = mongoose.model('User', new mongoose.Schema({
 router.post('/register', (req, res) => {
     let salt = bcrypt.genSaltSync(10)
     let hash = bcrypt.hashSync(req.body.password, salt)
+    req.body.username = cleanXSS(req.body.username).trim()
+    req.body.email = req.body.email.trim()
     req.body.password = hash
     req.body.salt = salt
     let user = new User(req.body)
@@ -48,7 +51,7 @@ router.post('/register', (req, res) => {
 })
 
 router.post('/login', (req, res) => {
-    const cred = req.body.user
+    const cred = req.body.user.trim()
     User.findOne({
         $or: [{ email: cred }, { username: cred }]
     }, async (err, user) => {

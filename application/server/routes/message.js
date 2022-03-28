@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
-const csurf = require('csurf')
+const csurf = require('csurf');
+const { cleanXSS } = require('../util/input_validation');
 const io = require('socket.io')(8080);
 
 //router.use(csurf())
@@ -123,13 +124,14 @@ io.on('connection', socket => {
     socket.join(id)
     console.log(socket.rooms);
     socket.on('message', ({ receiver, message }) => {
+        const cleanMessage = cleanXSS(message)
         console.log({
             receiver,
-            message
+            cleanMessage
         });
         socket.broadcast.emit('receive', {
             receiver,
-            message
+            cleanMessage
         })
     })
 })
