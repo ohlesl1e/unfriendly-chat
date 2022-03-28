@@ -1,10 +1,14 @@
 import React, { useState, useRef } from 'react'
+import { Toast, ToastContainer } from 'react-bootstrap'
 import { useNavigate } from 'react-router'
 
 import axios from 'axios'
 
 export default function Signup() {
   let navigate = useNavigate()
+
+  const [toast, setToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
   const usernameRef = useRef('')
   const emailRef = useRef('')
@@ -28,7 +32,7 @@ export default function Signup() {
         password: passwordRef.current.value,
       }, { withCredentials: true })
       .then((res) => {
-        console.log(res.data)
+        // console.log(res.data)
 
         setUsername('')
         setEmail('')
@@ -43,7 +47,14 @@ export default function Signup() {
         navigate('/')
         window.location.reload(false)
       }).catch((error) => {
-        console.log(error)
+        // console.log(error)
+        if (error.response.status === 403) {
+          setToastMessage('Email or username is already taken')
+          setToast(true)
+        } else {
+          setToastMessage('Internal error: please try again')
+          setToast(true)
+        }
       })
   }
 
@@ -67,6 +78,15 @@ export default function Signup() {
           <button type="submit" className="btn btn-primary">Sign Up</button>
         </div>
       </form>
+
+      <ToastContainer className="p-3 mt-5" position='top-end'>
+        <Toast show={toast} onClose={() => setToast(false)} autohide >
+          <Toast.Header>
+            <strong className="me-auto">Error</strong>
+          </Toast.Header>
+          <Toast.Body>{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   )
 }

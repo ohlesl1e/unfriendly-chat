@@ -1,9 +1,12 @@
-import React, { useState, useRef }  from 'react'
+import React, { useState, useRef } from 'react'
+import { Toast, ToastContainer } from 'react-bootstrap'
 import axios from 'axios'
 import { useNavigate } from 'react-router'
 
 export default function Login() {
   let navigate = useNavigate()
+
+  const [toast, setToast] = useState(false)
 
   const userRef = useRef('')
   const passwordRef = useRef('')
@@ -13,24 +16,29 @@ export default function Login() {
     event.preventDefault()
 
     // call server to log in
-    axios.post('http://localhost:4000/auth/login', 
-    {
-      user: userRef.current.value,
-      password: passwordRef.current.value,
-    }, { withCredentials: true })
+    axios.post('http://localhost:4000/auth/login',
+      {
+        user: userRef.current.value,
+        password: passwordRef.current.value,
+      }, { withCredentials: true })
       .then((res) => {
-        console.log(res.data)
-    
-        // set user to session storage
-        sessionStorage.setItem('unfriendly_session', res.data.session)
-        sessionStorage.setItem('unfriendly_id', res.data.uid)
-        sessionStorage.setItem('unfriendly_user', res.data.username)
+        if (res.status === 200) {
+          // console.log(res.data)
 
-        // redirect to /
-        navigate('/')
-        window.location.reload(false)
+          // set user to session storage
+          sessionStorage.setItem('unfriendly_session', res.data.session)
+          sessionStorage.setItem('unfriendly_id', res.data.uid)
+          sessionStorage.setItem('unfriendly_user', res.data.username)
+
+          // redirect to /
+          navigate('/')
+          window.location.reload(false)
+        }
       }).catch((error) => {
-        console.log(error)
+        // console.log(error.response)
+        if (error.response.status === 403) {
+          setToast(true)
+        }
       })
   }
 
@@ -50,5 +58,14 @@ export default function Login() {
           <button type="submit" className="btn btn-primary">Log In</button>
         </div>
       </form>
+
+      <ToastContainer className="p-3 mt-5" position='top-end'>
+        <Toast show={toast} onClose={() => setToast(false)} autohide >
+          <Toast.Header>
+            <strong className="me-auto">Error</strong>
+          </Toast.Header>
+          <Toast.Body>Incorrect email or password</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>)
 }
