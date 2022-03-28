@@ -1,13 +1,16 @@
-import React, { useState, useRef, useEffect }  from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import { io } from "socket.io-client"
 
 import {
+  useNavigate,
   useParams
 } from "react-router-dom";
 import { Message } from '../components';
 
 function Room() {
+  const navigate = useNavigate()
+
   const newMessageContainer = useRef()
 
   const [message, setMessage] = useState('');
@@ -31,17 +34,38 @@ function Room() {
   // room id from url
   let { id } = useParams()
 
-  const socket = io("http://localhost:8080", {
-    query: { roomid: id },
-  });
+  // const [socket, setSocket] = useState(io(
+  //   `http://localhost:8080`,
+  //   {
+  //     query: { roomid: id },
+  //     reconnection: true,
+  //   }
+  // ))
+
+  const socket = useRef(io(
+    `http://localhost:8080`,
+    {
+      query: { roomid: id },
+      autoConnect: true,
+      reconnection: true,
+    }
+  ))
+  const messageRef = useRef('')
+  const receipientRef = useRef('')
+
+
+  // const socket = io("http://localhost:8080", {
+  //   query: { roomid: id },
+  // });
 
   // some socket io connect stuff
   useEffect(() => {
     // connect
-    socket.on('connect', () => console.log(socket.id))
+    //socket.on('connect', () => console.log(socket.id))
+    //console.log(socketRef.current);
 
     // new message event + add new message to current messages thread
-    socket.on('receive', ({ sender, message}) => {
+    socket.current.on('receive', ({ sender, message }) => {
       // dont listen to receive event if sender is also you
       if (sender == userSession.username) return
 
@@ -60,36 +84,43 @@ function Room() {
     })
 
     // unmount component --> disconnect socket
-    return () => { socket.disconnect() }
-  }, [id])
+    return () => { socket.current.disconnect() }
+  }, [])
 
   // handle update message
   function handleOnChange(event) {
     setMessage(event.target.value)
   }
-  
+
   const handleOtherUsernameChange = (event) => {
     setOtherUsername(event.target.value)
   }
 
-  const sendMessage = async(event) => {
+  const sendMessage = async (event) => {
     // prevent page refresh on submit form
     event.preventDefault()
 
     // ignore when input field is empty
-    if (message == '') return
+    if (messageRef.current.value === '') return
 
     // TODO - refactor into new func
     // call server to create new room
     if (id == 'new') {
       let room = {
         sender: userSession,
-        receiver: otherUsername
+        receiver: receipientRef.current.value
       }
       try {
-          const res = await axios.post('http://localhost:4000/room/createroom', room);
-        } catch (err) {
-          console.error(err);
+        // const res = await axios.post('http://localhost:4000/room/createroom', room);
+        axios.post('http://localhost:4000/room/createroom', room)
+          .then(res => {
+            if (res.status === 200) {
+              id = res.data.roomid
+              navigate(`/rooms/${res.data.roomid}`)
+            }
+          })
+      } catch (err) {
+        console.error(err);
       }
 
       // TODO - clean up..
@@ -100,7 +131,7 @@ function Room() {
     // TODO - refactor adding new message - for this and socket.on(receive)
     let newMessage = {
       username: userSession.username,
-      message: message,
+      message: messageRef.current.value,
     }
 
     // add new message to thread
@@ -114,20 +145,22 @@ function Room() {
     newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
 
     // emit new message to socket
-    socket.emit('message', { sender: userSession.username, message: message })
+    socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })
+    messageRef.current.value = ''
   }
 
-  if (id == 'new') {
-    return (
-      <div className='container' style={{maxWidth: "750px"}}>
+  return (
+    <div className="container">
+      {id === 'new' ? <>
         <h1>New Room</h1>
         <form className="form-floating mb-3">
-          <input type="text" className="form-control" id="recipientUsername" value={otherUsername} onChange={handleOtherUsernameChange} />
-          <label for="recipientUsername">Recipient's Username</label>
+          <input ref={receipientRef} type="text" className="form-control" id="recipientUsername" />
+          <label htmlFor="recipientUsername">Recipient's Username</label>
         </form>
-
-        <div className='messages-container'>
-          {messages.map(({username, message}, index) => {
+      </> : <h1>Room {id}</h1>}
+      <div className='message-container'>
+        <div className='overflow-scroll'>
+          {messages.map(({ username, message }, index) => {
             return (
               <Message
                 key={index}
@@ -137,42 +170,18 @@ function Room() {
               />
             )
           })}
-
           <div className='p-5' ref={newMessageContainer}></div>
         </div>
+      </div>
 
-        <div className="container input-group fixed-bottom m-auto mb-5" style={{maxWidth: "750px"}}>
-          <input type="text" className="form-control" placeholder="Enter your message..." value={message} onChange={handleOnChange} />
-          <button className="btn btn-outline-secondary send-button" type="button" onClick={sendMessage}>Send</button>
+      <form onSubmit={sendMessage}>
+        <div className="container input-group fixed-bottom m-auto mb-5">
+          <input ref={messageRef} type="text" className="form-control" placeholder="Enter your message..." />
+          <button className="btn btn-outline-secondary send-button" type="submit">Send</button>
         </div>
-      </div>  
-    )
-  } else {
-    return (
-      <div className='container' style={{maxWidth: "750px"}}>
-        <h1>Room {id}</h1>
-        <div className='messages-container'>
-          {messages.map(({username, message}, index) => {
-            return (
-              <Message
-                key={index}
-                username={username}
-                message={message}
-                isCurrentUser={username == userSession.username}
-              />
-            )
-          })}
-
-          <div className='p-5' ref={newMessageContainer}></div>
-        </div>
-
-        <div className="container input-group fixed-bottom m-auto mb-5" style={{maxWidth: "750px"}}>
-          <input type="text" className="form-control" placeholder="Enter your message..." value={message} onChange={handleOnChange} />
-          <button className="btn btn-outline-secondary send-button" type="button" onClick={sendMessage}>Send</button>
-        </div>
-      </div>  
-    )
-  }
+      </form>
+    </div>
+  )
 }
 
 export default Room

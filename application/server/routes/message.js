@@ -2,7 +2,6 @@ const router = require('express').Router();
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const csurf = require('csurf');
-const { cleanXSS } = require('../util/input_validation');
 const cors = require('cors');
 const io = require('socket.io')(8080, {
     cors: {
@@ -128,20 +127,24 @@ router.post('/:roomid', async (req, res) => {
 
 io.on('connection', socket => {
     console.log("A client has connected");
-    console.log(socket.id);
     const id = socket.handshake.query.roomid
     socket.join(id)
     console.log(socket.rooms);
+
     socket.on('message', ({ sender, message }) => {
-        const cleanMessage = cleanXSS(message)
         console.log({
             sender,
-            message: cleanMessage
+            message
         });
         socket.broadcast.emit('receive', {
             sender,
-            message: cleanMessage
+            message
         })
+    })
+
+    socket.on('disconnect', () => {
+        console.log(`client ${socket.id} disconnected`)
+        socket.leave(id)
     })
 })
 
