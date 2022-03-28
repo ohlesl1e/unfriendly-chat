@@ -34,11 +34,14 @@ export default function Signup() {
         setEmail('')
         setPassword('')
 
-        // set user to localstorage
-        localStorage.setItem("user", JSON.stringify(user));
+        // set user to session storage
+        sessionStorage.setItem('unfriendly_session', res.data.session)
+        sessionStorage.setItem('unfriendly_id', res.data.uid)
+        sessionStorage.setItem('unfriendly_user', res.data.username)
 
         // redirect to /
         navigate('/')
+        window.location.reload(false)
       }).catch((error) => {
         console.log(error)
       })

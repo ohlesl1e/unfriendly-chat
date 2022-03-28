@@ -21,13 +21,14 @@ export default function Login() {
       .then((res) => {
         console.log(res.data)
     
-        // set user to localstorage
+        // set user to session storage
         sessionStorage.setItem('unfriendly_session', res.data.session)
         sessionStorage.setItem('unfriendly_id', res.data.uid)
         sessionStorage.setItem('unfriendly_user', res.data.username)
 
         // redirect to /
         navigate('/')
+        window.location.reload(false)
       }).catch((error) => {
         console.log(error)
       })
