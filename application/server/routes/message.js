@@ -48,7 +48,6 @@ router.get('/allrooms', async (req, res) => {
 })
 
 router.post('/createroom', async (req, res) => {
-    // const senderID = req.body.sender
     const { userId, sessionId } = req.body.sender
     try {
         const receiver = await User.findOne({
