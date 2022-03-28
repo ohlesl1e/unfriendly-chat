@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect }  from 'react'
 import axios from 'axios'
+import { io } from "socket.io-client"
 
 import {
   useParams
@@ -10,123 +11,57 @@ function Room() {
   const newMessageContainer = useRef()
 
   const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [otherUsername, setOtherUsername] = useState('');
+
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
     const initialValue = JSON.parse(savedUser);
     return initialValue || {};
   })
 
-  // TODO - clean up...
-  let testMessages = [
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'hi',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'hi there',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'hiiii',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'haaaa',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'hallo',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'what',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'huh',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'haaaa',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'hallo',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'what',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'huh',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'haaaa',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'hallo',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'what',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'huh',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'haaaa',
-    },
-    {
-      userUid: "2",
-      name: 'Joe',
-      message: 'hallo',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'what',
-    },
-    {
-      userUid: "1",
-      name: 'John',
-      message: 'huh',
-    },
-  ]
-
   const [userSession, setUserSession] = useState(() => {
     const userId = sessionStorage.getItem("unfriendly_id")
     const sessionId = sessionStorage.getItem("unfriendly_session")
-    const session = { userId, sessionId }
+    const username = sessionStorage.getItem("unfriendly_user")
+    const session = { userId, username, sessionId }
     return session
   })
 
-  const [messages, setMessages] = useState([]);
-  const [otherUsername, setOtherUsername] = useState('');
-
   // room id from url
   let { id } = useParams()
+
+  const socket = io("http://localhost:8080", {
+    query: { roomid: id },
+  });
+
+  // some socket io connect stuff
+  useEffect(() => {
+    // connect
+    socket.on('connect', () => console.log(socket.id))
+
+    // new message event + add new message to current messages thread
+    socket.on('receive', ({ sender, message}) => {
+      // dont listen to receive event if sender is also you
+      if (sender == userSession.username) return
+
+      // TODO - refactor adding new message - for this and socket.on(receive)
+      let newMessage = {
+        username: sender || 'other person....',
+        message: message,
+      }
+
+      // add new message to thread
+      setMessages(messages => [...messages, newMessage])
+
+      // TODO - fix scroll postion...
+      // new message scroll into the bottow of thread
+      // newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
+    })
+
+    // unmount component --> disconnect socket
+    return () => { socket.disconnect() }
+  }, [id])
 
   // handle update message
   function handleOnChange(event) {
@@ -151,32 +86,25 @@ function Room() {
         sender: userSession,
         receiver: otherUsername
       }
-      console.log(room)
       try {
           const res = await axios.post('http://localhost:4000/room/createroom', room);
-          console.log('calling create roomm...')
-          console.log(res.data);
         } catch (err) {
-          // Handle Error Here
-          console.log('ERROR -- calling create roomm...')
           console.error(err);
       }
 
+      // TODO - clean up..
       // update room id
       id = 'created!'
     }
- 
+
+    // TODO - refactor adding new message - for this and socket.on(receive)
     let newMessage = {
-      username: user.username,
+      username: userSession.username,
       message: message,
     }
 
     // add new message to thread
-    const newMessages = messages.slice()
-    newMessages.push(newMessage)
-
-    // update messages thread
-    setMessages(newMessages)
+    setMessages(messages => [...messages, newMessage])
 
     // update message input field
     setMessage('')
@@ -185,8 +113,8 @@ function Room() {
     // new message scroll into the bottow of thread
     newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
 
-    // socket io stuff
-
+    // emit new message to socket
+    socket.emit('message', { sender: userSession.username, message: message })
   }
 
   if (id == 'new') {
@@ -205,7 +133,7 @@ function Room() {
                 key={index}
                 username={username}
                 message={message}
-                isCurrentUser={username == user.username}
+                isCurrentUser={username == userSession.username}
               />
             )
           })}
@@ -230,7 +158,7 @@ function Room() {
                 key={index}
                 username={username}
                 message={message}
-                isCurrentUser={username == user.username}
+                isCurrentUser={username == userSession.username}
               />
             )
           })}
