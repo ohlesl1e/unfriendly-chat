@@ -21,9 +21,12 @@ router.post('/register', (req, res) => {
     req.body.salt = salt
     let user = new User(req.body)
 
+    // make a new user and save it to mongodb
     user.save(err => {
         if (err) {
             let error = 'Please try again'
+
+            // if email or uesrname not unique
             if (err.code === 11000) {
                 error = 'Email or username is already taken'
             }
@@ -32,8 +35,9 @@ router.post('/register', (req, res) => {
         const userInfo = {
             uid: user._id,
             username: user.username,
-            email: user.email
+            // email: user.email
         }
+        // save the user id and username to session
         req.session.user = userInfo
 
         return res.status(200).send({
@@ -56,10 +60,12 @@ router.post('/login', (req, res) => {
         const userInfo = {
             uid: user._id,
             username: user.username,
-            email: user.email
+            // email: user.email
         }
 
+        // save the user id and username to session
         req.session.user = userInfo
+
         return res.status(200).send({
             ...userInfo,
             session: req.session.id,

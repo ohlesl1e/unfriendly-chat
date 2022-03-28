@@ -13,17 +13,23 @@ const io = require('socket.io')(8080, {cors: {origin: [
 
 mongoose.connect('mongodb://localhost/unfriendlychat')
 
+const User = mongoose.model('User')
+
 const Room = mongoose.model('Room', new mongoose.Schema({
-    user: { type: Array, required: true },
+    user: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        }],
+        required: true,
+    },
     key: { type: Array, required: true }
 }))
-
-const User = mongoose.model('User')
 
 router.get('/allrooms', async (req, res) => {
 
     console.log({
-        session: req.sessionID,
+        session: req.session,
         uid: req.query.uid
     })
     const uid = req.query.uid
@@ -32,7 +38,7 @@ router.get('/allrooms', async (req, res) => {
         return res.status(404).send({ error: 'please include the uid' })
     }
     try {
-        const result = await Room.where({ user: uid })
+        const result = await Room.where({ user: uid }).select('user')
 
         // console.log(result);
         // populate the user field
@@ -59,20 +65,28 @@ router.post('/createroom', async (req, res) => {
         } else {
             let room = await Room.where({ user: { $all: [userId, receiver._id.toString()] } })
             console.log(room);
+            // check if the room exist
             if (room.length > 0) {
                 return res.status(302).send({ message: 'room existed' })
             }
+
+            // make a new room
             room = new Room({
                 user: [userId, receiver._id],
                 key: [],
             })
+            await room.populate({ path: 'user', select: 'username' })
+            // console.log({ users: room.user });
             room.save(err => {
                 if (err) {
                     return res.status(500).send({ error: 'please try again' })
                 }
+
                 return res.status(200).send({
                     message: 'room created',
-                    roomid: room._id
+                    roomid: room._id,
+                    user: room.user,
+                    key: room.key
                 })
             })
         }
@@ -82,9 +96,30 @@ router.post('/createroom', async (req, res) => {
     }
 })
 
-//router.post('/:roomid', async (req, res) => {
-//
-//})
+
+// call this when you join a room
+router.post('/:roomid', async (req, res) => {
+    try {
+        console.log(req.params.roomid);
+        const room = await Room.findById(req.params.roomid)
+
+        // check if room exists
+        if (room) {
+            await room.populate({ path: 'user', select: 'username' })
+            console.log({ room })
+            return res.status(200).send({
+                message: 'room found',
+                roomid: room._id,
+                user: room.user,
+                key: room.key
+            })
+        }
+        return res.status(404).send({ message: 'room not found' })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ message: 'internal error' })
+    }
+})
 
 io.on('connection', socket => {
     console.log("A client has connected");
