@@ -44,7 +44,8 @@ function Home() {
   const [userSession, setUserSession] = useState(() => {
     const userId = sessionStorage.getItem("unfriendly_id")
     const sessionId = sessionStorage.getItem("unfriendly_session")
-    const session = { userId, sessionId }
+    const username = sessionStorage.getItem("unfriendly_user")
+    const session = { userId, username, sessionId }
     return session
   })
 
@@ -54,6 +55,7 @@ function Home() {
 
     // call server to get rooms for this user
     const result = await axios.get('http://localhost:4000/room/allrooms', { params: { uid: userId } })
+    console.log(result.data)
 
     setRooms(result.data.rooms);
   }, [])
@@ -85,7 +87,7 @@ function Home() {
           // all rooms
           <div className="card">
             <ul className="list-group list-group-flush">
-              {rooms.map(({_id, name}) => {
+              {rooms.map(({_id, user}) => {
                 return (
                   <Link key={_id} className="list-group-item p-4" to={{pathname: `/rooms/${_id}`}}>
                     <div className="d-flex">
@@ -93,7 +95,7 @@ function Home() {
                         <FaUser />
                       </div>
                       <div className="flex-grow-0 ms-3">
-                        {name}
+                        { userSession.username == user[1].username ? user[0].username : user[1].username }
                       </div>
                     </div>
                   </Link>
