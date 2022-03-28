@@ -41,12 +41,21 @@ function Home() {
     }
   }, []);
 
+  const [userSession, setUserSession] = useState(() => {
+    const userId = sessionStorage.getItem("unfriendly_id")
+    const sessionId = sessionStorage.getItem("unfriendly_session")
+    const username = sessionStorage.getItem("unfriendly_user")
+    const session = { userId, username, sessionId }
+    return session
+  })
+
   // get rooms for logged in user
   useEffect(async() => {
-    let { username } = user
+    let { userId } = userSession
 
     // call server to get rooms for this user
-    const result = await axios.get('http://localhost:4000/room/allrooms', { params: { uid: username } })
+    const result = await axios.get('http://localhost:4000/room/allrooms', { params: { uid: userId } })
+    console.log(result.data)
 
     setRooms(result.data.rooms);
   }, [])
@@ -78,15 +87,15 @@ function Home() {
           // all rooms
           <div className="card">
             <ul className="list-group list-group-flush">
-              {rooms.map(({roomId, name}) => {
+              {rooms.map(({_id, user}) => {
                 return (
-                  <Link key={roomId} className="list-group-item p-4" to={{pathname: `/rooms/${roomId}`}}>
+                  <Link key={_id} className="list-group-item p-4" to={{pathname: `/rooms/${_id}`}}>
                     <div className="d-flex">
                       <div className="flex-shrink-0">
                         <FaUser />
                       </div>
                       <div className="flex-grow-0 ms-3">
-                        {name}
+                        { userSession.username == user[1].username ? user[0].username : user[1].username }
                       </div>
                     </div>
                   </Link>

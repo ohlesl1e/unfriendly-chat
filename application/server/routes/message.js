@@ -3,7 +3,16 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const csurf = require('csurf');
 const { cleanXSS } = require('../util/input_validation');
-const io = require('socket.io')(8080);
+const cors = require('cors');
+const io = require('socket.io')(8080, {
+    cors: {
+        origin: [
+            'http://localhost:3000',
+            'http://localhost*',
+            'localhost:3000'
+        ]
+    }
+});
 
 //router.use(csurf())
 
@@ -50,7 +59,7 @@ router.get('/allrooms', async (req, res) => {
 })
 
 router.post('/createroom', async (req, res) => {
-    const senderID = req.body.uid
+    const { userId, sessionId } = req.body.sender
     try {
         const receiver = await User.findOne({
             $or: [{ username: req.body.receiver }, { email: req.body.receiver }]
@@ -59,7 +68,7 @@ router.post('/createroom', async (req, res) => {
         if (!receiver) {
             return res.status(404).send({ error: 'user not found' })
         } else {
-            let room = await Room.where({ user: { $all: [senderID, receiver._id.toString()] } })
+            let room = await Room.where({ user: { $all: [userId, receiver._id.toString()] } })
             console.log(room);
             // check if the room exist
             if (room.length > 0) {
@@ -68,7 +77,7 @@ router.post('/createroom', async (req, res) => {
 
             // make a new room
             room = new Room({
-                user: [senderID, receiver._id],
+                user: [userId, receiver._id],
                 key: [],
             })
             await room.populate({ path: 'user', select: 'username' })
@@ -123,15 +132,15 @@ io.on('connection', socket => {
     const id = socket.handshake.query.roomid
     socket.join(id)
     console.log(socket.rooms);
-    socket.on('message', ({ receiver, message }) => {
+    socket.on('message', ({ sender, message }) => {
         const cleanMessage = cleanXSS(message)
         console.log({
-            receiver,
-            cleanMessage
+            sender,
+            message: cleanMessage
         });
         socket.broadcast.emit('receive', {
-            receiver,
-            cleanMessage
+            sender,
+            message: cleanMessage
         })
     })
 })
