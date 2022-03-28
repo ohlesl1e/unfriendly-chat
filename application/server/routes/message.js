@@ -1,13 +1,18 @@
 const router = require('express').Router();
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
-const csurf = require('csurf')
+const csurf = require('csurf');
+const { cleanXSS } = require('../util/input_validation');
 const cors = require('cors');
-const io = require('socket.io')(8080, {cors: {origin: [
-    'http://localhost:3000',
-    'http://localhost*',
-    'localhost:3000'
-]}});
+const io = require('socket.io')(8080, {
+    cors: {
+        origin: [
+            'http://localhost:3000',
+            'http://localhost*',
+            'localhost:3000'
+        ]
+    }
+});
 
 //router.use(csurf())
 
@@ -128,13 +133,14 @@ io.on('connection', socket => {
     socket.join(id)
     console.log(socket.rooms);
     socket.on('message', ({ sender, message }) => {
+        const cleanMessage = cleanXSS(message)
         console.log({
             sender,
-            message
+            message: cleanMessage
         });
         socket.broadcast.emit('receive', {
             sender,
-            message
+            message: cleanMessage
         })
     })
 })
