@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { Toast, ToastContainer } from 'react-bootstrap'
 import axios from 'axios'
 import { io } from "socket.io-client"
 
@@ -12,6 +13,8 @@ function Room() {
   const navigate = useNavigate()
 
   const newMessageContainer = useRef()
+  const [toast, setToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -110,25 +113,42 @@ function Room() {
         sender: userSession,
         receiver: receipientRef.current.value
       }
-      try {
-        // const res = await axios.post('http://localhost:4000/room/createroom', room);
-        axios.post('http://localhost:4000/room/createroom', room)
-          .then(res => {
-            if (res.status === 200) {
-              id = res.data.roomid
-              navigate(`/rooms/${res.data.roomid}`)
+      // const res = await axios.post('http://localhost:4000/room/createroom', room);
+      axios.post('http://localhost:4000/room/createroom', room)
+        .then(res => {
+          if (res.status === 200) {
+            id = res.data.roomid
+            addMessage()
+            navigate(`/rooms/${res.data.roomid}`)
+          }
+        }).catch(error => {
+          if (error.response) {
+            console.error(error.response);
+            if (error.response.status === 302) {
+              addMessage()
+              navigate(`/rooms/${error.response.data.roomid}`)
             }
-          })
-      } catch (err) {
-        console.error(err);
-      }
-
-      // TODO - clean up..
-      // update room id
-      id = 'created!'
+            if (error.response.status === 400) {
+              setToastMessage('Can\'t talk to yourself, go make some friends')
+              setToast(true)
+              return
+            } else if (error.response.status === 404) {
+              setToastMessage('User not found')
+              setToast(true)
+              return
+            } else {
+              setToastMessage('Internal error: please try again')
+              setToast(true)
+              return
+            }
+          }
+        })
+    } else {
+      addMessage()
     }
+  }
 
-    // TODO - refactor adding new message - for this and socket.on(receive)
+  const addMessage = () => {
     let newMessage = {
       username: userSession.username,
       message: messageRef.current.value,
@@ -158,7 +178,9 @@ function Room() {
           <label htmlFor="recipientUsername">Recipient's Username</label>
         </form>
       </> : <h1>Room {id}</h1>}
-      <div className='message-container'>
+
+
+      <div className='message-container overflow-scroll'>
         <div className='overflow-scroll'>
           {messages.map(({ username, message }, index) => {
             return (
@@ -170,16 +192,27 @@ function Room() {
               />
             )
           })}
-          <div className='p-5' ref={newMessageContainer}></div>
+          <div className='p-5 mb-6' ref={newMessageContainer}></div>
         </div>
       </div>
 
-      <form onSubmit={sendMessage}>
-        <div className="container input-group fixed-bottom m-auto mb-5">
-          <input ref={messageRef} type="text" className="form-control" placeholder="Enter your message..." />
-          <button className="btn btn-outline-secondary send-button" type="submit">Send</button>
-        </div>
-      </form>
+      <div className='message-form-container fixed-bottom pt-4'>
+        <form onSubmit={sendMessage}>
+          <div className="container input-group">
+            <input ref={messageRef} type="text" className="form-control" placeholder="Enter your message..." />
+            <button className="btn btn-outline-secondary send-button" type="submit">Send</button>
+          </div>
+        </form>
+      </div>
+
+      <ToastContainer className="p-3 mt-5" position='top-end'>
+        <Toast show={toast} onClose={() => setToast(false)} autohide >
+          <Toast.Header>
+            <strong className="me-auto">Error</strong>
+          </Toast.Header>
+          <Toast.Body>{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   )
 }

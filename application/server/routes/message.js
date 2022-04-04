@@ -67,11 +67,17 @@ router.post('/createroom', async (req, res) => {
         if (!receiver) {
             return res.status(404).send({ error: 'user not found' })
         } else {
+            if (userId === receiver._id.toString()) {
+                return res.status(400).send({ message: 'can\'t start room with yourself' })
+            }
             let room = await Room.where({ user: { $all: [userId, receiver._id.toString()] } })
             console.log(room);
             // check if the room exist
             if (room.length > 0) {
-                return res.status(302).send({ message: 'room existed' })
+                return res.status(302).send({ 
+                    message: 'room existed',
+                    roomid: room[0]._id,
+                 })
             }
 
             // make a new room
