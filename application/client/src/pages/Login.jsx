@@ -36,8 +36,10 @@ export default function Login() {
         }
       }).catch((error) => {
         // console.log(error.response)
-        if (error.response.status === 403) {
-          setToast(true)
+        if (error.response) {
+          if (error.response.status === 403) {
+            setToast(true)
+          }
         }
       })
   }

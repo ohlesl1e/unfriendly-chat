@@ -122,23 +122,25 @@ function Room() {
             navigate(`/rooms/${res.data.roomid}`)
           }
         }).catch(error => {
-          console.error(error.response);
-          if (error.response.status === 302) {
-            addMessage()
-            navigate(`/rooms/${error.response.data.roomid}`)
-          }
-          if (error.response.status === 400) {
-            setToastMessage('Can\'t talk to yourself, go make some friends')
-            setToast(true)
-            return
-          } else if (error.response.status === 404) {
-            setToastMessage('User not found')
-            setToast(true)
-            return
-          } else {
-            setToastMessage('Internal error: please try again')
-            setToast(true)
-            return
+          if (error.response) {
+            console.error(error.response);
+            if (error.response.status === 302) {
+              addMessage()
+              navigate(`/rooms/${error.response.data.roomid}`)
+            }
+            if (error.response.status === 400) {
+              setToastMessage('Can\'t talk to yourself, go make some friends')
+              setToast(true)
+              return
+            } else if (error.response.status === 404) {
+              setToastMessage('User not found')
+              setToast(true)
+              return
+            } else {
+              setToastMessage('Internal error: please try again')
+              setToast(true)
+              return
+            }
           }
         })
     } else {
@@ -190,7 +192,7 @@ function Room() {
               />
             )
           })}
-          <div className='p-5' ref={newMessageContainer}></div>
+          <div className='p-5 mb-6' ref={newMessageContainer}></div>
         </div>
       </div>
 

@@ -48,12 +48,14 @@ export default function Signup() {
         window.location.reload(false)
       }).catch((error) => {
         // console.log(error)
-        if (error.response.status === 403) {
-          setToastMessage('Email or username is already taken')
-          setToast(true)
-        } else {
-          setToastMessage('Internal error: please try again')
-          setToast(true)
+        if (error.response) {
+          if (error.response.status === 403) {
+            setToastMessage('Email or username is already taken')
+            setToast(true)
+          } else {
+            setToastMessage('Internal error: please try again')
+            setToast(true)
+          }
         }
       })
   }
