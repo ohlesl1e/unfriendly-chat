@@ -3,10 +3,11 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{enumitem}
-\usepackage{setspace}
-\usepackage{hyperref}
-\usepackage{indentfirst}
+%\usepackage{setspace} default should be single spacing
 \usepackage[all]{nowidow}
+\usepackage{newtxtext}
+\usepackage{newtxmath}
+\usepackage{hyperref}
 %\newtheorem*{proposition}{Proposition}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\Z}{\mathbb{Z}}
@@ -36,7 +37,6 @@ sorting=none
 \newpage
 
 \section{Introduction}
-%Introduction/technical context of the specific subtopic you studied in papers
 \par %Background Provide a context and background information for the readers to understand the motivation and significance of your project. Use statistics, news or other evidence to demonstrate the importance of the project.
 \par %Problem Introduce the specific problem that your project aims to solve Explain why this problem is important.
 \par %Goal and Contribution: This paragraph offers the main claim of your project and previews what the readers will learn in the remainder of this report. It should also state the scope of your project.
@@ -46,21 +46,21 @@ sorting=none
 \section{Project Description}
 
 \subsection{Overview}
-\par 
+\par  %Overview: Describe the overall design of your solution with a flowchart to illustrate the workflow, if possible.
 
-\newpage
-\subsection{Method}
-
+\subsection{Method(s)}
+\par %Elaborate the core components in the workflow of the design, one in each subsection. As for each component, describe the method(s) used in detail.
 
 \newpage
 \section{Demo/Evaluation}
 \subsection{Experimental Setup}
+\par %Experimental Setup: Describe how the experiments/demo are conducted to evaluate the performance of the project. Name the hardware and/or software used in the experiments. Summarize the key parameters of the experiments in a table, if needed.
 
 \subsection{Results}
-
+\par %Results: Results could be numerical performance comparison or screenshots of demo. As for numerical performance comparison, evaluate the performance in terms of a certain metric in each subsection. The results must be illustrated in a table or a figure. Observation/analysis on the evaluation results must be included, which is often written in a sentence like “the performance of XXX method in terms of some metric(s) is XXX” or “the XXX method is XXX percent faster, cheaper, smaller, or otherwise better than XXX”. As for screenshots of demo, explain what the demo is for and the observations.
 
 \section{Conclusion and Future Work}
-
+\par %The conclusion should restate the main activities and contributions of your research project. Future work is not mandatory, which could identify the future directions to improve the work.
 
 
 
