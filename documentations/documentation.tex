@@ -39,14 +39,14 @@ sorting=none
 \section{Introduction}
 %Background: Provide a context and background information for the readers to understand the motivation and significance of your project. Use statistics, news or other evidence to demonstrate the importance of the project.
 In 2013, Edward “Ed” Snowden, a 29 year old government contractor who was a former technical assistant for the CIA and current employee of defense contractor Booz Allen Hamilton came forward with startling revelations: the United States government was indiscriminately collecting and spying on the internet communications of a huge majority of the English speaking world \parencite{website:snowden}. While security concerns are part of network engineering, major service providers and technology companies did not typically prioritize security at the time. Due to the revelations, securing their services and communications became a top priority, as the scope and extent of the ‘bulk collections’ programs that were being run by the NSA shocked even industry insiders.
-\par Within six months, prominent companies such as Facebook, Twitter, and Google began implementing upgrades to both internal and external systems [5], and according to some, greatly sped up the adoption of stronger security and end-to-end encryption protocols [6]. 
+\par Within six months, prominent companies such as Facebook, Twitter, and Google began implementing upgrades to both internal and external systems \parencite{website:nytimes}, and many consider this new approach to be the reason for the quick and widespread adoption of stronger security and end-to-end encryption protocols \parencite{website:newsweek}. 
 
 \par %Problem Introduce the specific problem that your project aims to solve Explain why this problem is important.
 But how do technology companies actually secure communications and services for their users? Users will be less likely to use services which do not offer security and privacy, and in general societies are thought to suffer when they cannot protect the privacy of their citizens. 
-\par One open source cryptography project [7] is an industry leading standard [8]for end-to-end encryption, developed in the wake of the Snowden revelations: the Signal Protocol. The Signal Protocol [3] is a non-federated cryptographic protocol which is most widely used to ensure end-to-end encryption for communication applications (i.e. text-based messaging and VoIP). Applications which currently implement the Signal Protocol include Google’s Messages, Facebook Messenger, Whatsapp, and Skype [8], meaning the number of users whose messages are secured by the Signal Protocol potentially number in the billions. (this matches the scope of the problem, as there are billions of users of technology users around the world)
+\par One open source cryptography project \parencite{website:open-source} is an industry leading standard \parencite{website:signal-widespread} for end-to-end encryption, developed in the wake of the Snowden revelations: the Signal Protocol. The Signal Protocol \parencite{website:signal-docs} is a non-federated cryptographic protocol which is most widely used to ensure end-to-end encryption for communication applications (i.e. text-based messaging and VoIP). Applications which currently implement the Signal Protocol include Google’s Messages, Facebook Messenger, Whatsapp, and Skype \parencite{website:signal-widespread}, meaning the number of users whose messages are secured by the Signal Protocol potentially number in the billions. (this matches the scope of the problem, as there are billions of users of electronic technologies around the world)
 
 \par %Goal and Contribution: This paragraph offers the main claim of your project and previews what the readers will learn in the remainder of this report. It should also state the scope of your project.
-Due to its widespread use, broad influences, intended effect, and open sourced approach, examining the protocol thoroughly is crucial in understanding how industry leaders secure both internal and external network communications, as well as providing a foundation for apprehending and developing further iterations and applications, since developers working on applications continue to use the Signal Protocol as foundation and inspiration for further encryption protocol development.[9][10][11][12] Through the course of this project by which we implement the protocol in a real-time chat application setting, we seek to gain an understanding of this industry standard technology, and transmit that to our colleagues for their benefit as well. 
+Due to its widespread use, broad influences, intended effect, and open sourced approach, examining the protocol thoroughly is crucial in understanding how industry leaders secure both internal and external network communications, as well as providing a foundation for apprehending and developing further iterations and applications, since developers working on applications continue to use the Signal Protocol as foundation and inspiration for further encryption protocol development.\parencite{website:global-adoption}\parencite{website:viber}\parencite{website:forsta}\parencite{website:forsta-gh} Through the course of this project by which we implement the protocol in a real-time chat application setting, we seek to gain an understanding of this industry standard technology, and transmit that to our colleagues for their benefit as well. 
 
 \par% Outline: Give a roadmap of the rest of this report.
 The remainder of this report will details the overview, methods, and results of the implementation of the Signal Protocol. A high level understanding of the protocol is available to the casual reader, while others may wish to examine the citations for further exploration.
@@ -78,31 +78,9 @@ The remainder of this report will details the overview, methods, and results of 
 
 \newpage
 \section{References}
-VI. References
-1. Nadim Kobeissi, Karthikeyan Bhargavan, Bruno Blanchet. Automated Verification for Secure Messaging Protocols and Their Implementations: A Symbolic and Computational Approach. 2nd IEEE European Symposium on Security and Privacy, Apr 2017, Paris, France. pp.435 - 450, ?10.1109/EuroSP.2017.38. Hal-01575923
+%1. Nadim Kobeissi, Karthikeyan Bhargavan, Bruno Blanchet. Automated Verification for Secure Messaging Protocols and Their Implementations: A Symbolic and Computational Approach. 2nd IEEE European Symposium on Security and Privacy, Apr 2017, Paris, France. pp.435 - 450, ?10.1109/EuroSP.2017.38. Hal-01575923
 
-2. K. Cohn-Gordon, C. Cremers, B. Dowling, L. Garratt and D. Stebila, "A Formal Security Analysis of the Signal Messaging Protocol," 2017 IEEE European Symposium on Security and Privacy (EuroS\&P), 2017, pp. 451-466, doi: 10.1109/EuroSP.2017.27.
-
-3. Signal Technical Information. Signal. https://signal.org/docs/
-
-4. Edward Snowden: the whistleblower behind the NSA surveillance revelations. The Guardian. https://www.theguardian.com/world/2013/jun/09/edward-snowden-nsa-whistleblower-surveillance
-
-5. Miller, C. C. (2013, November 4). Angry Over U.S. Surveillance, Tech Giants Bolster Defenses. The New York Times Company. https://web.archive.org/web/20131106015230/https://www.nytimes.com/2013/11/01/technology/angry-over-us-surveillance-tech-giants-bolster-defenses.html
-
-6. Cuthbertson, A. (2016, June 8). Snowden “Sped Up Encryption” by Seven Years. Newsweek. https://www.newsweek.com/snowden-sped-encryption-seven-years-452688
-
-7. Garling, C. (2011, December 20). Twitter Open Sources Its Android Moxie. WIRED. https://web.archive.org/web/20111222010355/http://www.wired.com/wiredenterprise/2011/12/twitter-open-sources-its-android-moxie/
-
-8. Signal partners with Microsoft to bring end-to-end encryption to Skype. (2018, January 11). Signal. https://web.archive.org/web/20200202152037/https://signal.org/blog/skype-partnership/
-
-9. Canada, Germany, and Australia are getting e2e encryption, Viber Blog https://web.archive.org/web/20161005083000/http://www.viber.com/en/blog/2016-05-03/canada-germany-and-australia-are-getting-e2e-encryption
-
-10. Viber Encryption Overview, Viber https://web.archive.org/web/20160711035838/http://www.viber.com/en/security-overview 
-
-11. Forsta developer AMA (interview) %https://web.archive.org/web/20180502045526/https://www.reddit.com/r/crypto/comments/8b1m6n/forsta_signal_based_messaging_platform_for/ 
-
-12. Forsta codebase, (Github repository) https://web.archive.org/web/20180613054634/https://github.com/ForstaLabs/libsignal-node
-
+%2. K. Cohn-Gordon, C. Cremers, B. Dowling, L. Garratt and D. Stebila, "A Formal Security Analysis of the Signal Messaging Protocol," 2017 IEEE European Symposium on Security and Privacy (EuroS\&P), 2017, pp. 451-466, doi: 10.1109/EuroSP.2017.27.
 \printbibliography
 
 \end{document}
