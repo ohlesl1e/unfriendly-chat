@@ -50,7 +50,7 @@ export default function Login() {
       <form className="row g-3" onSubmit={handleSubmit}>
         <div className="col-12">
           <label htmlFor="username" className="form-label">Username</label>
-          <input ref={userRef} type="text" className="form-control" id="username" placeholder="Enter your username or email" />
+          <input ref={userRef} type="text" className="form-control" id="username" placeholder="Enter your username" />
         </div>
         <div className="col-12">
           <label htmlFor="password" className="form-label">Password</label>
