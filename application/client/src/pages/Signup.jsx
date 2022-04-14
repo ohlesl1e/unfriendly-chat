@@ -44,9 +44,12 @@ export default function Signup() {
         sessionStorage.setItem('unfriendly_id', res.data.uid)
         sessionStorage.setItem('unfriendly_user', res.data.username)
 
+        // generate prekeys
+        createKeys(res.data.uid, res.data.session)
+
         // redirect to /
-        navigate('/')
-        window.location.reload(false)
+        // navigate('/')
+        // window.location.reload(false)
       }).catch((error) => {
         // console.log(error)
         if (error.response) {
@@ -86,12 +89,14 @@ export default function Signup() {
       oneTimePreKeys: [publicPreKey],
     }
 
-    localStorage.setItem(`unfriendly_key`,JSON.stringify({
+    localStorage.setItem(`unfriendly_key`, JSON.stringify({
       registrationID: uid,
       identityKey: identityKeyPair,
       baseKeyId: preKey.keyPair,
       signedPreKeyId: signedPreKey.keyPair
     }))
+
+    console.log(preKeyBundle);
 
     axios.post('http://localhost:4000/auth/storekey', {
       uid,
