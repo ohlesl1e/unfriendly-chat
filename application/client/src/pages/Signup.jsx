@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { Toast, ToastContainer } from 'react-bootstrap'
 import { useNavigate } from 'react-router'
+import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
 
 import axios from 'axios'
 
@@ -58,6 +59,59 @@ export default function Signup() {
           }
         }
       })
+  }
+
+  const createKeys = async (uid, session) => {
+    const identityKeyPair = await KeyHelper.generateIdentityKeyPair()
+    const baseKeyId = Math.floor(10000 * Math.random())
+    const preKey = await KeyHelper.generatePreKey(baseKeyId)
+    const signedPreKeyId = Math.floor(10000 * Math.random())
+    const signedPreKey = await KeyHelper.generateSignedPreKey(identityKeyPair, signedPreKeyId)
+
+    const publicSignedPreKey = {
+      keyId: signedPreKeyId,
+      publicKey: signedPreKey.keyPair.pubKey,
+      signature: signedPreKey.signature,
+    }
+
+    const publicPreKey = {
+      keyId: preKey.keyId,
+      publicKey: preKey.keyPair.pubKey
+    }
+
+    const preKeyBundle = {
+      uid,
+      identityPubKey: identityKeyPair.pubKey,
+      signedPreKey: publicSignedPreKey,
+      oneTimePreKeys: [publicPreKey],
+    }
+
+    localStorage.setItem(`unfriendly_key`,JSON.stringify({
+      registrationID: uid,
+      identityKey: identityKeyPair,
+      baseKeyId: preKey.keyPair,
+      signedPreKeyId: signedPreKey.keyPair
+    }))
+
+    axios.post('http://localhost:4000/auth/storekey', {
+      uid,
+      session,
+      preKeyBundle,
+    }).then(res => {
+      navigate('/')
+      window.location.reload(false)
+    }).catch((error) => {
+      // console.log(error)
+      if (error.response) {
+        if (error.response.status === 403) {
+          setToastMessage('Email or username is already taken')
+          setToast(true)
+        } else {
+          setToastMessage('Internal error: please try again')
+          setToast(true)
+        }
+      }
+    })
   }
 
   return (

@@ -76,4 +76,22 @@ router.post('/login', (req, res) => {
     })
 })
 
+router.post('/storekey', (req, res) => {
+    console.log({
+        session: req.body.session,
+        uid: req.body.uid,
+        bundle: req.body.preKeyBundle
+    })
+    const uid = req.body.uid
+    User.findById(uid, async (err, user) => {
+        if (err || !user) {
+            return res.status(404).send()
+        }
+
+        user.prekeys = req.body.preKeyBundle
+        await user.save()
+        return res.status(200).send
+    })
+})
+
 module.exports = router

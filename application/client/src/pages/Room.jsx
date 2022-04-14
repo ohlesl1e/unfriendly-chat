@@ -67,6 +67,10 @@ function Room() {
     //socket.on('connect', () => console.log(socket.id))
     //console.log(socketRef.current);
 
+    if (id !== 'new') {
+      getMessage()
+    }
+
     // new message event + add new message to current messages thread
     socket.current.on('receive', ({ sender, message }) => {
       // dont listen to receive event if sender is also you
@@ -125,6 +129,7 @@ function Room() {
           if (error.response) {
             console.error(error.response);
             if (error.response.status === 302) {
+              id = error.response.data.roomid
               addMessage()
               navigate(`/rooms/${error.response.data.roomid}`)
             }
@@ -157,6 +162,8 @@ function Room() {
     // add new message to thread
     setMessages(messages => [...messages, newMessage])
 
+    storeMessage([...messages, newMessage])
+
     // update message input field
     setMessage('')
 
@@ -167,6 +174,17 @@ function Room() {
     // emit new message to socket
     socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })
     messageRef.current.value = ''
+  }
+
+  const storeMessage = (msgArr) => {
+    localStorage.setItem(id, JSON.stringify(msgArr))
+  }
+
+  const getMessage = () => {
+    const storedMessages = JSON.parse(localStorage.getItem(id))
+    if(storedMessages){
+      setMessages(storedMessages)
+    }
   }
 
   return (
@@ -181,7 +199,6 @@ function Room() {
 
 
       <div className='message-container overflow-scroll'>
-        <div className='overflow-scroll'>
           {messages.map(({ username, message }, index) => {
             return (
               <Message
@@ -193,7 +210,6 @@ function Room() {
             )
           })}
           <div className='p-5 mb-6' ref={newMessageContainer}></div>
-        </div>
       </div>
 
       <div className='message-form-container fixed-bottom pt-4'>

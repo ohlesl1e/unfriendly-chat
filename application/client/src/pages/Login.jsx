@@ -20,7 +20,12 @@ export default function Login() {
       {
         user: userRef.current.value,
         password: passwordRef.current.value,
-      }, { withCredentials: true })
+      }, {
+      withCredentials: true,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      }
+    })
       .then((res) => {
         if (res.status === 200) {
           // console.log(res.data)
