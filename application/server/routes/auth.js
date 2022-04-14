@@ -13,6 +13,7 @@ const User = mongoose.model('User', new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     salt: { type: String, required: true },
+    prekeys: {type: Object, required: false}
 }))
 
 router.post('/register', (req, res) => {
@@ -88,9 +89,11 @@ router.post('/storekey', (req, res) => {
             return res.status(404).send()
         }
 
+        console.log(user)
+
         user.prekeys = req.body.preKeyBundle
         await user.save()
-        return res.status(200).send
+        return res.status(200).send()
     })
 })
 
