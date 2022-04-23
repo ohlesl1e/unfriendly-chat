@@ -7,6 +7,8 @@
 \usepackage[all]{nowidow}
 \usepackage{newtxtext}
 \usepackage{newtxmath}
+\usepackage{graphicx}
+\graphicspath{{./images/}}
 \usepackage{hyperref}
 %\newtheorem*{proposition}{Proposition}
 \newcommand{\N}{\mathbb{N}}
@@ -54,12 +56,31 @@ The remainder of this report will details the overview, methods, and results of 
 
 \newpage
 \section{Project Description}
+%Overview: Describe the overall design of your solution with a flowchart to illustrate the workflow, if possible.
 
 \subsection{Overview}
-\par  %Overview: Describe the overall design of your solution with a flowchart to illustrate the workflow, if possible.
+The actual implementation of the project involved the connecting of a user facing react web chat application with the actual implementation of the cryptographic protocols and algorithms which were hidden from the user.
+\par A separate server instance was used to store the pre-keys for the initial part of the Signal protocol (which is elaborated on in detail in the Methods section immediately following). 
+\par Various cryptographic primitives are relied in the course of the implementation of the actual cryptographic protocols, specifically public/private key pairs for signing from elliptic curve 25519 functions, AES 256 bit encryption for cleartext/ciphertext conversion concerning the user messages, and HKDF for the key derivation (so-called 'ratcheting') functionality. (more details on these in the methods section which follows)
+\par A high-level illustrative flowchart of the project overview may be seen on the next page.
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{images/spi-flow.png}
+    \caption{A flowchart illustrating an overview of the overall project design}
+    \label{fig:my_label5}
+\end{figure}
+
+\newpage
 \subsection{Method(s)}
-\par %Elaborate the core components in the workflow of the design, one in each subsection. As for each component, describe the method(s) used in detail.
+%Elaborate the core components in the workflow of the design, one in each subsection. As for each component, describe the method(s) used in detail.
+\subsubsection{React front end}
+\subsubsection{Server back end}
+\subsubsection{Pre-Key Caching}
+\subsubsection{Triple Diffie-Hellman exchange}
+\subsubsection{Double Ratchet Algorithm}
+\subsubsection{Analysis by Packet Examination}
+%how, results actually follow in results section below 
 
 \newpage
 \section{Demo/Evaluation}
