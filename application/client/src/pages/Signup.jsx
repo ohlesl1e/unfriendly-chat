@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
 
 import axios from 'axios'
+import { arrayBufferToString } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 
 export default function Signup() {
   let navigate = useNavigate()
@@ -84,16 +85,34 @@ export default function Signup() {
 
     const preKeyBundle = {
       uid,
-      identityPubKey: identityKeyPair.pubKey,
-      signedPreKey: publicSignedPreKey,
-      oneTimePreKeys: [publicPreKey],
+      identityPubKey: arrayBufferToString(identityKeyPair.pubKey),
+      signedPreKey: {
+        keyId: publicSignedPreKey.keyId,
+        publicKey: arrayBufferToString(publicSignedPreKey.publicKey),
+        signature: arrayBufferToString(publicSignedPreKey.signature),
+      },
+      oneTimePreKeys: [
+        {
+          keyId: preKey.keyId,
+          publicKey: arrayBufferToString(preKey.keyPair.pubKey),
+        }
+      ]
     }
 
     localStorage.setItem(`unfriendly_key`, JSON.stringify({
       registrationID: uid,
-      identityKey: identityKeyPair,
-      baseKeyId: preKey.keyPair,
-      signedPreKeyId: signedPreKey.keyPair
+      identityKey: {
+        pubKey: arrayBufferToString(identityKeyPair.pubKey),
+        privKey: arrayBufferToString(identityKeyPair.privKey),
+      },
+      baseKeyId: {
+        pubKey: arrayBufferToString(preKey.keyPair.pubKey),
+        privKey: arrayBufferToString(preKey.keyPair.privKey),
+      },
+      signedPreKeyId: {
+        pubKey: arrayBufferToString(signedPreKey.keyPair.pubKey),
+        privKey: arrayBufferToString(signedPreKey.keyPair.privKey),
+      },
     }))
 
     console.log(preKeyBundle);
