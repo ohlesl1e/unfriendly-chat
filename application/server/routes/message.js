@@ -74,10 +74,10 @@ router.post('/createroom', async (req, res) => {
             console.log(room);
             // check if the room exist
             if (room.length > 0) {
-                return res.status(302).send({ 
+                return res.status(302).send({
                     message: 'room existed',
                     roomid: room[0]._id,
-                 })
+                })
             }
 
             // make a new room
@@ -115,7 +115,7 @@ router.post('/:roomid', async (req, res) => {
 
         // check if room exists
         if (room) {
-            await room.populate({ path: 'user', select: 'username' })
+            await room.populate({ path: 'user', select: ['username', 'prekeys'] })
             console.log({ room })
             return res.status(200).send({
                 message: 'room found',
