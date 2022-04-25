@@ -3,10 +3,10 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{enumitem}
-%\usepackage{setspace} default should be single spacing
+%\usepackage{setspace} default should be single spacing now
 \usepackage[all]{nowidow}
-\usepackage{newtxtext}
-\usepackage{newtxmath}
+\usepackage{newtxtext} %for times new roman typeface
+\usepackage{newtxmath} %for times new roman math equations
 \usepackage{graphicx}
 \graphicspath{{./images/}}
 \usepackage{hyperref}
@@ -45,13 +45,13 @@ In 2013, Edward “Ed” Snowden, a 29 year old government contractor who was a 
 
 \par %Problem Introduce the specific problem that your project aims to solve Explain why this problem is important.
 But how do technology companies actually secure communications and services for their users? Users will be less likely to use services which do not offer security and privacy, and in general societies are thought to suffer when they cannot protect the privacy of their citizens. 
-\par One open source cryptography project \parencite{website:open-source} is an industry leading standard \parencite{website:signal-widespread} for end-to-end encryption, developed in the wake of the Snowden revelations: the Signal Protocol. The Signal Protocol \parencite{website:signal-docs} is a non-federated cryptographic protocol which is most widely used to ensure end-to-end encryption for communication applications (i.e. text-based messaging and VoIP). Applications which currently implement the Signal Protocol include Google’s Messages, Facebook Messenger, Whatsapp, and Skype \parencite{website:signal-widespread}, meaning the number of users whose messages are secured by the Signal Protocol potentially number in the billions. (this matches the scope of the problem, as there are billions of users of electronic technologies around the world)
+\par One open source cryptography project \parencite{website:open-source} is an industry leading standard \parencite{website:signal-widespread} for end-to-end encryption, developed in the wake of the Snowden revelations: the Signal Protocol. The Signal Protocol \parencite{website:signal-docs} is a non-federated cryptographic protocol which is most widely used to ensure end-to-end encryption for communication applications (i.e. text-based messaging and VoIP). Applications which currently implement the Signal Protocol include Google’s Messages, Facebook Messenger, Whatsapp, and Skype \parencite{website:signal-widespread}, meaning the number of users whose messages are secured by the Signal Protocol potentially number in the billions (this matches the scope of the problem, as there are billions of users of electronic technologies around the world).
 
 \par %Goal and Contribution: This paragraph offers the main claim of your project and previews what the readers will learn in the remainder of this report. It should also state the scope of your project.
 Due to its widespread use, broad influences, intended effect, and open sourced approach, examining the protocol thoroughly is crucial in understanding how industry leaders secure both internal and external network communications, as well as providing a foundation for apprehending and developing further iterations and applications, since developers working on applications continue to use the Signal Protocol as foundation and inspiration for further encryption protocol development.\parencite{website:global-adoption}\parencite{website:viber}\parencite{website:forsta}\parencite{website:forsta-gh} Through the course of this project by which we implement the protocol in a real-time chat application setting, we seek to gain an understanding of this industry standard technology, and transmit that to our colleagues for their benefit as well. 
 
 \par% Outline: Give a roadmap of the rest of this report.
-The remainder of this report will details the overview, methods, and results of the implementation of the Signal Protocol. A high level understanding of the protocol is available to the casual reader, while others may wish to examine the citations for further exploration.
+The remainder of this report will details the overview, methods, and results of the implementation of the Signal Protocol. A high level understanding of the protocol is available to the general reader, while others may wish to examine the citations for further exploration.
 
 
 \newpage
@@ -59,10 +59,11 @@ The remainder of this report will details the overview, methods, and results of 
 %Overview: Describe the overall design of your solution with a flowchart to illustrate the workflow, if possible.
 
 \subsection{Overview}
-The actual implementation of the project involved the connecting of a user facing react web chat application with the actual implementation of the cryptographic protocols and algorithms which were hidden from the user.
-\par A separate server instance was used to store the pre-keys for the initial part of the Signal protocol (which is elaborated on in detail in the Methods section immediately following). 
-\par Various cryptographic primitives are relied in the course of the implementation of the actual cryptographic protocols, specifically public/private key pairs for signing from elliptic curve 25519 functions, AES 256 bit encryption for cleartext/ciphertext conversion concerning the user messages, and HKDF for the key derivation (so-called 'ratcheting') functionality. (more details on these in the methods section which follows)
-\par A high-level illustrative flowchart of the project overview may be seen on the next page.
+The actual implementation of the project involves the connecting of a user facing react web chat application with the actual implementation of the cryptographic protocols and algorithms, which are hidden from the user.
+\par A separate server instance is used to store the pre-keys for the initial part of the Signal protocol (which is elaborated on in detail in the Methods section immediately following). 
+\par Various so-called cryptographic primitives (which are, in other words, the basic building blocks which make up systems for encryption and security: common examples are one-way hash functions or onion routing/proxy server based 'mix networks') are relied on in the course of the implementation of the actual cryptographic protocols, specifically public/private key pairs for signing from elliptic curve 25519 Diffie-Hellman functions, AES 256 bit encryption for cleartext/ciphertext conversion with respect to the user-generated messages, and HKDF for the key derivation (so-called 'ratcheting') functionality. (more details on these in the methods section which follows)
+\par The authors wish to thank at this time in particular M. Marlinspike and his colleagues at the Signal Foundation\parencite{website:sigfound}, as well as R. Schmidt and M. E. Johnson at Privacy Research LLC \parencite{website:prllc} for their work and generosity. Due to the time constraints of this project, as well as the relatively limited technical expertise and experience of the project team, use of open source libraries and documentation in the project implementation proved necessary under the scope and bounds of the work done. Specific citations follow in the text where appropriate, but in general the materials that these two groups made publically available were very helpful in the research and implementation process. \parencite{website:signal-docs}\parencite{website:prggh}\parencite{website:siglibjavascript}\parencite{website:prglibsigtypescript}\parencite{website:prglibsigdemo}
+\par A high-level illustrative flowchart of the project overview is shown on the next page.
 
 \begin{figure}[h!]
     \centering
@@ -77,7 +78,13 @@ The actual implementation of the project involved the connecting of a user facin
 \subsubsection{React front end}
 \subsubsection{Server back end}
 \subsubsection{Pre-Key Caching}
+Each user, on registration to the chat service (or, more generally, whatever service is being provided) has a set of keys generated by the application service, some of which are sent to a server for storage and later use. These keys are used in protocol for creation and verification of Edwards-curve Digital Signature Algorithm (EdDSA) compatible digital signatures, as well as for the actual keys sent to the server. \parencite{website:sigdocXEdDSA} 
+\par The keys sent to the server form a set of elliptic curve public keys, containing a user identity key, a signed pre-key, a pre-key signature (comprised of a signed identity and signed pre-key), and a set of one-time pre-keys (the actual number of these one-time pre-keys is not defined, but in use is typically more than ten or so, with automatic generation and uploading for 'refilling' to the server when the number runs lower than some developer-defined amount). \parencite{website:sigdocX3DH} 
+\par The actual implementation of the elliptic curve functions is based on (open-source) C libraries (which is typical for lower-level encryption processes, since lower level languages enable easier access to raw calculations and faster computations), which are then wrapped in higher level languages for access and implementation. \parencite{website:prglibsigtypescriptCurve25519}\parencite{website:prglibsigtypescriptCurve25519rawC}
+
 \subsubsection{Triple Diffie-Hellman exchange}
+Suppose we have a user Alice who registers with a messaging application which implements the Signal Protocol and wishes to message Bob, a user who 
+
 \subsubsection{Double Ratchet Algorithm}
 \subsubsection{Analysis by Packet Examination}
 %how, results actually follow in results section below 
