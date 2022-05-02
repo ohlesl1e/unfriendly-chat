@@ -69,7 +69,7 @@ The actual implementation of the project involves the connecting of a user facin
     \centering
     \includegraphics[width=\textwidth]{images/spi-flow.png}
     \caption{A flowchart illustrating an overview of the overall project design}
-    \label{fig:my_label5}
+    \label{fig:my_label1}
 \end{figure}
 
 \newpage
@@ -83,7 +83,24 @@ Each user, on registration to the chat service (or, more generally, whatever ser
 \par The actual implementation of the elliptic curve functions is based on (open-source) C libraries (which is typical for lower-level encryption processes, since lower level languages enable easier access to raw calculations and faster computations), which are then wrapped in higher level languages for access and implementation. \parencite{website:prglibsigtypescriptCurve25519}\parencite{website:prglibsigtypescriptCurve25519rawC}
 
 \subsubsection{Triple Diffie-Hellman exchange}
-Suppose we have a user Alice who registers with a messaging application which implements the Signal Protocol and wishes to message Bob, a user who 
+Suppose we have a user Alice who registers with a messaging application which implements the Signal Protocol and wishes to message Bob, another user of the messaging application. In this case, they must establish a shared secret to begin trading messages which each can in turn encrypt and decrypt. 
+\par They do this by using a variant of the Diffie-Hellman protocol known as the triple Diffie-Hellman exchange (X3DH). X3DH uses five elliptic curve public keys, which include both Alice and Bob's public identity keys ($IK_A, IK_B$ respectively), as well as one of Bob's pre-keys ($OPK_B$) and Bob's signed prekey bundle ($SPK_B$).\parencite{website:sigdocX3DH}
+\par Then, the procedure performs (for Alice) a Diffie-Hellman exchange up to four times (but at least three times) in the following way: 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=10cm]{images/x3dh.png}
+    \caption{An overview of the Triple Diffie-Hellman exchange\parencite{website:sigdocX3DH}}
+    \label{fig:my_label2}
+\end{figure}
+
+\newpage 
+\par The first two exchanges guarantee authentication of each party (as one might surmise given that they involve each of Alice and Bob's identity public keys), while the latter two provide forward secrecy (including, among other things, a prevention of so-called \textit{replay} attacks). 
+\par Assuming that all four exchanges occur, Alice now has four outputs from the Diffie-Hellmans, which are concatenated in order and then used as input to the Key Derivation function for the first secret key (symmetric) for the message encryption and decryption.
+\par Then, Alice sends Bob an initial message containing the necessary information for Bob to replicate the X3DH on his end, such that both parties now have a shared secret key for beginning message exchange, encryption, and decryption.
+\par We pause to note that the Signal Protocol does not guarantee that the public identity key purporting to correspond to the intended recipient is actually under the sole control of the intended recipient: in actual implementation (such as with the Signal Messaging application), verification occurs \textit{out of band} (meaning not involving digital communications mediated by the Signal Protocol). Each user opens a specific window on their piece of application software and can verify the \textit{fingerprint} (the details of which an interested reader may further research as an exercise) of their identity public key, either in a physical meeting, or perhaps in a video teleconference.
+ 
+
 
 \subsubsection{Double Ratchet Algorithm}
 \subsubsection{Analysis by Packet Examination}
