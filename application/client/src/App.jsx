@@ -34,7 +34,7 @@ function App() {
     return (
         // TODO - add log out button in navbar
         <div className="App">
-            <nav className="navbar navbar-dark bg-dark mb-3 sticky-top">
+            <nav className="navbar navbar-dark bg-dark sticky-top">
                 <div className="container">
                     <a className="navbar-brand" href="/">
                         <img src={require('./twerk.svg')} alt="" width="30" height="24" className="d-inline-block align-text-top" />
