@@ -6,9 +6,9 @@ const cors = require('cors');
 const io = require('socket.io')(8080, {
     cors: {
         origin: [
-            'http://localhost:3000',
-            'http://localhost*',
-            'localhost:3000'
+            'http://*:3000',
+            'localhost:3000',
+            /[\w]+:3000/,
         ]
     }
 });
@@ -136,6 +136,8 @@ io.on('connection', socket => {
     const id = socket.handshake.query.roomid
     socket.join(id)
     console.log(socket.rooms);
+
+    socket.to(id).emit('joined')
 
     socket.on('message', ({ sender, message }) => {
         console.log({
