@@ -112,7 +112,7 @@ router.get('/:roomid', async (req, res) => {
         console.log(req.params.roomid);
         const room = await Room.findById(req.params.roomid)
 
-        // check if room exists
+        // check if room exists and get the other user's prekeys bundle
         if (room) {
             await room.populate({ path: 'user', select: ['username', 'prekeys'] })
             console.log({ room })

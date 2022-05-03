@@ -1,23 +1,41 @@
+// State management
 import React, { useState, useRef, useEffect } from 'react'
-import { Toast, ToastContainer } from 'react-bootstrap'
-import axios from 'axios'
-import { io } from "socket.io-client"
-import { binaryStringToArrayBuffer } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 
+// Backend + Socket
+import axios from 'axios'
+import { io } from 'socket.io-client'
+
+// Signal Protocol related libraries
+import { binaryStringToArrayBuffer } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
+import {
+    SignalProtocolAddress,
+    SessionBuilder,
+    SessionCipher
+} from '@privacyresearch/libsignal-protocol-typescript'
+import SignalProtocolStore from '../signal/store'
+
+// Routing
 import {
     useNavigate,
     useParams
-} from "react-router-dom";
-import { Message } from '../components';
-import { useWindowSize } from '../components/resize';
+} from 'react-router-dom'
 
+// Components
+import { Toast, ToastContainer } from 'react-bootstrap'
+import { Message } from '../components'
+import { useWindowSize } from '../components/resize'
+
+// Handle autoscroll for message thread
 const PhantomMessage = () => {
-    const elementRef = useRef();
-    useEffect(() => elementRef.current.scrollIntoView());
-    return <div ref={elementRef} />;
+    const elementRef = useRef()
+    useEffect(() => elementRef.current.scrollIntoView())
+    return <div ref={elementRef} />
 }
 
 function Room() {
+    // room id from url
+    let { id } = useParams()
+
     const navigate = useNavigate()
     const height = useWindowSize()
 
@@ -26,13 +44,13 @@ function Room() {
     const [toastMessage, setToastMessage] = useState('')
 
     const sendable = useRef(true)
-    const [messages, setMessages] = useState([]);
-    const [preKeyBundle, setPreKeyBundle] = useState({});
+    const [messages, setMessages] = useState([])
+    const [preKeyBundle, setPreKeyBundle] = useState({})
 
     const [user, setUser] = useState(() => {
-        const savedUser = localStorage.getItem("user");
-        const initialValue = JSON.parse(savedUser);
-        return initialValue || {};
+        const savedUser = localStorage.getItem("user")
+        const initialValue = JSON.parse(savedUser)
+        return initialValue || {}
     })
 
     const [userSession, setUserSession] = useState(() => {
@@ -43,17 +61,7 @@ function Room() {
         return session
     })
 
-    // room id from url
-    let { id } = useParams()
-
-    // const [socket, setSocket] = useState(io(
-    //   `http://localhost:8080`,
-    //   {
-    //     query: { roomid: id },
-    //     reconnection: true,
-    //   }
-    // ))
-
+    // Init socket
     const socket = useRef(io(
         `http://localhost:8080`,
         {
@@ -65,23 +73,30 @@ function Room() {
             reconnection: true,
         }
     ))
+
+    // Reference message chat input
     const messageRef = useRef('')
+
+    // Reference recipient username input
     const receipientRef = useRef('')
 
+    // Signal Sessions
+    const signalStore = new SignalProtocolStore()
+    const [receipientAddress, setReceipientAddress] = useState('')
 
-    // const socket = io("http://localhost:8080", {
-    //   query: { roomid: id },
-    // });
 
-    // some socket io connect stuff
+    // Handle Socket IO listening events
+    // NOTES: This side effect would run once after component mounting
     useEffect(() => {
         // connect
         //socket.on('connect', () => console.log(socket.id))
         //console.log(socketRef.current);
 
+        // Get prekeys bundle for state
         if (id !== 'new') {
             getMessage()
-            // TODO pull prekey bundle
+
+            // Get prekeys from browser local storage
             if (localStorage.getItem(`key_${id}`)) {
                 let { identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
                 identityPubKey = binaryStringToArrayBuffer(identityPubKey)
@@ -91,12 +106,13 @@ function Room() {
                     key.publicKey = binaryStringToArrayBuffer(key.publicKey)
                 })
                 setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
-            } else {
+            } else { // Get prekeys from server, then save to browser local storage
                 axios.get(`http://localhost:4000/room/${id}`)
                     .then(res => {
                         let { user } = res.data
                         user.forEach(value => {
-                            if (userSession.userId !== value._id) {
+                        if (userSession.userId !== value._id) { // get prekeys from recipient user
+                                console.log(value)
                                 let { identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
                                 localStorage.setItem(`key_${id}`, JSON.stringify({ identityPubKey, signedPreKey, oneTimePreKeys }))
                                 identityPubKey = binaryStringToArrayBuffer(identityPubKey)
@@ -119,6 +135,9 @@ function Room() {
             // dont listen to receive event if sender is also you
             if (sender == userSession.username) return
 
+            // TODO - decrypt
+            // let plaintext = sessionCipher.decrypt()
+
             // TODO - refactor adding new message - for this and socket.on(receive)
             let newMessage = {
                 username: sender || 'other person....',
@@ -127,10 +146,6 @@ function Room() {
 
             // add new message to thread
             setMessages(messages => [...messages, newMessage])
-
-            // TODO - fix scroll postion...
-            // new message scroll into the bottow of thread
-            // newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
         })
 
         // user joined
@@ -168,7 +183,7 @@ function Room() {
                 sender: userSession,
                 receiver: receipientRef.current.value
             }
-            // const res = await axios.post('http://localhost:4000/room/createroom', room);
+
             axios.post('http://localhost:4000/room/createroom', room)
                 .then(res => {
                     if (res.status === 200) {
@@ -215,12 +230,13 @@ function Room() {
 
         storeMessage([...messages, newMessage])
 
-        // TODO - fix scroll postion...
-        // new message scroll into the bottow of thread
-        //newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
+        // TODO - encrypt
+        // let ciphertext = sessionCipher.encrypt()
 
         // emit new message to socket
         socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })
+
+        // clear message chat input
         messageRef.current.value = ''
     }
 
