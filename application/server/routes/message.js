@@ -27,7 +27,6 @@ const Room = mongoose.model('Room', new mongoose.Schema({
         }],
         required: true,
     },
-    key: { type: Array, required: true }
 }))
 
 router.get('/allrooms', async (req, res) => {
@@ -108,7 +107,7 @@ router.post('/createroom', async (req, res) => {
 
 
 // call this when you join a room
-router.post('/:roomid', async (req, res) => {
+router.get('/:roomid', async (req, res) => {
     try {
         console.log(req.params.roomid);
         const room = await Room.findById(req.params.roomid)
@@ -132,12 +131,12 @@ router.post('/:roomid', async (req, res) => {
 })
 
 io.on('connection', socket => {
-    console.log("A client has connected");
     const id = socket.handshake.query.roomid
     socket.join(id)
+    console.log(`Client ${socket.handshake.query.uid} has connected to ${socket.handshake.query.roomid}`);
     console.log(socket.rooms);
 
-    socket.to(id).emit('joined')
+    io.to(id).emit('joined')
 
     socket.on('message', ({ sender, message }) => {
         console.log({
@@ -151,7 +150,8 @@ io.on('connection', socket => {
     })
 
     socket.on('disconnect', () => {
-        console.log(`client ${socket.id} disconnected`)
+        console.log(`client ${socket.id} disconnected from ${id}`)
+        io.to(id).emit('left')
         socket.leave(id)
     })
 })

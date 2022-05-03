@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react'
 import { Toast, ToastContainer } from 'react-bootstrap'
 import axios from 'axios'
 import { useNavigate } from 'react-router'
+import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
+import { arrayBufferToString } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 
 export default function Login() {
   let navigate = useNavigate()
@@ -36,8 +38,7 @@ export default function Login() {
           sessionStorage.setItem('unfriendly_user', res.data.username)
 
           // redirect to /
-          navigate('/')
-          window.location.reload(false)
+          createKeys(res.data.uid, res.data.session)
         }
       }).catch((error) => {
         // console.log(error.response)
@@ -47,6 +48,79 @@ export default function Login() {
           }
         }
       })
+  }
+
+  const createKeys = async (uid, session) => {
+    const identityKeyPair = await KeyHelper.generateIdentityKeyPair()
+    const baseKeyId = Math.floor(10000 * Math.random())
+    const preKey = await KeyHelper.generatePreKey(baseKeyId)
+    const signedPreKeyId = Math.floor(10000 * Math.random())
+    const signedPreKey = await KeyHelper.generateSignedPreKey(identityKeyPair, signedPreKeyId)
+
+    const publicSignedPreKey = {
+      keyId: signedPreKeyId,
+      publicKey: signedPreKey.keyPair.pubKey,
+      signature: signedPreKey.signature,
+    }
+
+    const publicPreKey = {
+      keyId: preKey.keyId,
+      publicKey: preKey.keyPair.pubKey
+    }
+
+    const preKeyBundle = {
+      uid,
+      identityPubKey: arrayBufferToString(identityKeyPair.pubKey),
+      signedPreKey: {
+        keyId: publicSignedPreKey.keyId,
+        publicKey: arrayBufferToString(publicSignedPreKey.publicKey),
+        signature: arrayBufferToString(publicSignedPreKey.signature),
+      },
+      oneTimePreKeys: [
+        {
+          keyId: preKey.keyId,
+          publicKey: arrayBufferToString(preKey.keyPair.pubKey),
+        }
+      ]
+    }
+
+    localStorage.setItem(`unfriendly_key`, JSON.stringify({
+      registrationID: uid,
+      identityKey: {
+        pubKey: arrayBufferToString(identityKeyPair.pubKey),
+        privKey: arrayBufferToString(identityKeyPair.privKey),
+      },
+      baseKeyId: {
+        pubKey: arrayBufferToString(preKey.keyPair.pubKey),
+        privKey: arrayBufferToString(preKey.keyPair.privKey),
+      },
+      signedPreKeyId: {
+        pubKey: arrayBufferToString(signedPreKey.keyPair.pubKey),
+        privKey: arrayBufferToString(signedPreKey.keyPair.privKey),
+      },
+    }))
+
+    console.log(preKeyBundle);
+
+    axios.post('http://localhost:4000/auth/storekey', {
+      uid,
+      session,
+      preKeyBundle,
+    }).then(res => {
+      navigate('/')
+      //window.location.reload(false)
+    }).catch((error) => {
+      // console.log(error)
+      if (error.response) {
+        if (error.response.status === 403) {
+          setToastMessage('Email or username is already taken')
+          setToast(true)
+        } else {
+          setToastMessage('Internal error: please try again')
+          setToast(true)
+        }
+      }
+    })
   }
 
   return (

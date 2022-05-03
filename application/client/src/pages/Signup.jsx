@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react'
 import { Toast, ToastContainer } from 'react-bootstrap'
 import { useNavigate } from 'react-router'
 import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
-
 import axios from 'axios'
 import { arrayBufferToString } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 

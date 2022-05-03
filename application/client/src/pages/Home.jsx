@@ -45,7 +45,7 @@ function Home() {
   return (
     // TODO - if no user in localstorage --> login page
     // TODO - else, show all messages page
-    <div className='container' style={{ maxWidth: "750px" }}>
+    <div className='container mt-3' style={{ maxWidth: "750px" }}>
       {userSession && userSession.username ? (
         <div>
           <div className='d-flex justify-content-between mb-5'>

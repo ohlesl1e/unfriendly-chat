@@ -2,23 +2,32 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Toast, ToastContainer } from 'react-bootstrap'
 import axios from 'axios'
 import { io } from "socket.io-client"
+import { binaryStringToArrayBuffer } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 
 import {
     useNavigate,
     useParams
 } from "react-router-dom";
 import { Message } from '../components';
+import { useWindowSize } from '../components/resize';
+
+const PhantomMessage = () => {
+    const elementRef = useRef();
+    useEffect(() => elementRef.current.scrollIntoView());
+    return <div ref={elementRef} />;
+}
 
 function Room() {
     const navigate = useNavigate()
+    const height = useWindowSize()
 
     const newMessageContainer = useRef()
     const [toast, setToast] = useState(false)
     const [toastMessage, setToastMessage] = useState('')
 
-    const [sendable, setSendable] = useState(false);
+    const sendable = useRef(true)
     const [messages, setMessages] = useState([]);
-    const [otherUsername, setOtherUsername] = useState('');
+    const [preKeyBundle, setPreKeyBundle] = useState({});
 
     const [user, setUser] = useState(() => {
         const savedUser = localStorage.getItem("user");
@@ -48,7 +57,10 @@ function Room() {
     const socket = useRef(io(
         `http://localhost:8080`,
         {
-            query: { roomid: id },
+            query: {
+                roomid: id,
+                uid: userSession.userId,
+            },
             autoConnect: true,
             reconnection: true,
         }
@@ -70,6 +82,36 @@ function Room() {
         if (id !== 'new') {
             getMessage()
             // TODO pull prekey bundle
+            if (localStorage.getItem(`key_${id}`)) {
+                let { identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
+                identityPubKey = binaryStringToArrayBuffer(identityPubKey)
+                signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
+                signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
+                oneTimePreKeys.forEach(key => {
+                    key.publicKey = binaryStringToArrayBuffer(key.publicKey)
+                })
+                setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
+            } else {
+                axios.get(`http://localhost:4000/room/${id}`)
+                    .then(res => {
+                        let { user } = res.data
+                        user.forEach(value => {
+                            if (userSession.userId !== value._id) {
+                                let { identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
+                                localStorage.setItem(`key_${id}`, JSON.stringify({ identityPubKey, signedPreKey, oneTimePreKeys }))
+                                identityPubKey = binaryStringToArrayBuffer(identityPubKey)
+                                signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
+                                signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
+                                oneTimePreKeys.forEach(key => {
+                                    key.publicKey = binaryStringToArrayBuffer(key.publicKey)
+                                })
+                                setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
+                            }
+                        })
+                    }).catch(err => {
+                        console.log(err)
+                    })
+            }
         }
 
         // new message event + add new message to current messages thread
@@ -92,17 +134,25 @@ function Room() {
         })
 
         // user joined
-        socket.current.on('joined', () => {
-            setSendable(true)
-        })
+        // socket.current.on('joined', () => {
+        //     console.log('other user joined')
+        //     sendable.current = true
+        //     console.log(sendable.current);
+        // })
+
+        // user left
+        // socket.current.on('left', () => {
+        //     console.log('other user left')
+        //     sendable.current = false
+        //     console.log(sendable.current);
+        // })
 
         // unmount component --> disconnect socket
-        return () => { socket.current.disconnect() }
+        return () => {
+            socket.current.close()
+            socket.current.disconnect()
+        }
     }, [])
-
-    const handleOtherUsernameChange = (event) => {
-        setOtherUsername(event.target.value)
-    }
 
     const sendMessage = async (event) => {
         // prevent page refresh on submit form
@@ -167,7 +217,7 @@ function Room() {
 
         // TODO - fix scroll postion...
         // new message scroll into the bottow of thread
-        newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
+        //newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
 
         // emit new message to socket
         socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })
@@ -196,7 +246,7 @@ function Room() {
             </> : <h1>Room {id}</h1>}
 
 
-            <div className='message-container overflow-scroll'>
+            <div className='message-container overflow-scroll' style={{ height: (height - 158) }}>
                 {messages.map(({ username, message }, index) => {
                     return (
                         <Message
@@ -207,14 +257,14 @@ function Room() {
                         />
                     )
                 })}
-                <div className='p-5 mb-6' ref={newMessageContainer}></div>
+                <PhantomMessage />
             </div>
 
-            <div className='message-form-container fixed-bottom pt-4'>
+            <div className='message-form-container'>
                 <form onSubmit={sendMessage}>
                     <div className="container input-group">
                         <input ref={messageRef} type="text" className="form-control" placeholder="Enter your message..." />
-                        <button className="btn btn-outline-secondary send-button" type="submit" disabled={!sendable}>Send</button>
+                        <button className="btn btn-outline-secondary send-button" type="submit" disabled={!sendable.current}>Send</button>
                     </div>
                 </form>
             </div>
