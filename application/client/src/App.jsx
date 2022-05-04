@@ -8,7 +8,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Room from './pages/Room'
 import Signup from './pages/Signup'
-import welcome from './images/whalecum.png'
+import welcome from './images/welcome.png'
 
 function App() {
     let navigate = useNavigate()
