@@ -103,13 +103,15 @@ Suppose we have a user Alice who registers with a messaging application which im
  
 
 
-\subsubsection{Double Ratchet Algorithm\parencite{website:sigdocdoubleratchet}}
-Once a shared secret is established, it is used as the basis for a secret key for message encryption and decryption using AES-256 encryption for the messages, and as input to a Key Derivation Function (KDF). The KDF in the Signal Protocol is most often implemented with SHA-256 or SHA-512 (the hashing algorithms); here it is SHA-256. \par Because of the use of hashing, each subsequent key is arrived at via a so-called \textit{one way} function: even if an adversary accessed this key, they would not be able to derive previous keys. This is the source of \textit{forward} secrecy, and one of the ratchets in the nomenclature of the Double Ratchet Algorithm.
-\par Each time the secret key is used in the KDF, the two important outputs are keys: a message key used for encryption and decryption, and a chain key, used as input to derive the next keys. (there is a third output, which serves as an \textit{initial vector} for the AES-256 message encryption, but the details of CBC mode AES encryption are outside the scope of the project and this report)
+\subsubsection{Double Ratchet Algorithm}
+The Double Ratchet Algorithm is most relevant once a communication session is established and preliminary work (the preceding sections) are out of the way. \parencite{website:sigdocdoubleratchet} Once a shared secret is established, it is used as the basis for a secret key for message encryption and decryption using AES-256 encryption for the messages, and as input to a Key Derivation Function (KDF). The KDF in the Signal Protocol is most often implemented with SHA-256 or SHA-512 (the hashing algorithms); here it is SHA-256. \par Because of the use of hashing, each subsequent key is arrived at via a so-called \textit{one way} function: even if an adversary accessed this key, they would not be able to derive previous keys. This is the source of \textit{forward} secrecy, and one of the ratchets in the nomenclature of the Double Ratchet Algorithm. (since a mechanical ratchet only turns one way, this is used in general language to indicate the one way function of some operation)
+\par Each time the secret key is used in the KDF, the two important outputs are keys: a message key used for encryption and decryption, and a chain key, used as input to derive the next keys. (there is a third output, which serves as an \textit{initial vector} (iv) for the AES-256 message encryption, but the details of CBC mode AES encryption are outside the scope of the project and this report)
+\par Each participant keeps two chains of keys, where the sending chain of Alice matches the receiving chain of Bob, and vice versa such that they can send and receive encrypted messages.
 \par The astute reader might here find an issue: if an adversary got a hold of a key, they might not be able to go backward and derive \textit{previous} keys in order to read previous messages in the conversation history, but they would be able to use the KDF (since the specifications are open source, there are a limited number of possible KDFs in use for any service which implements the Signal Protocol) to get a hold of any and all \textit{future} keys, thus compromising the integrity of any following communications after the inital key disclosure.
 \par This is where the second ratchet comes into play. Each message contains within its header a new input for a new Diffie-Hellman exchange, and each party then feeds the resulting shared secret into the input for the KDF. Thus the KDF has two inputs: the previous key, and this new shared Diffie-Hellman secret, which provides additional entropy.
 \par Thus, even if a key is obtained by an outside party, only the corresponding message is vulnerable; once the new input to the KDF is processed, the following key is secure since it cannot be obtained from just the previous key.
-\par Each participant keeps two chains of keys, where the sending chain of Alice matches the receiving chain of Bob, and vice versa such that they can send and receive encrypted messages.
+\par Therefore, the Double Ratchet Algorithm provides secrecy for the communications it encrypts both forward and backward in sequence, and logically derives its name from this property. 
+
 
 \subsubsection{Analysis by Packet Examination}
 %how, results actually follow in results section below 
@@ -117,23 +119,24 @@ Once a shared secret is established, it is used as the basis for a secret key fo
 \newpage
 \section{Demo/Evaluation}
 \subsection{Experimental Setup}
-\par %Experimental Setup: Describe how the experiments/demo are conducted to evaluate the performance of the project. Name the hardware and/or software used in the experiments. Summarize the key parameters of the experiments in a table, if needed.
+%Experimental Setup: Describe how the experiments/demo are conducted to evaluate the performance of the project. Name the hardware and/or software used in the experiments. Summarize the key parameters of the experiments in a table, if needed.
 
 \subsection{Results}
-\par %Results: Results could be numerical performance comparison or screenshots of demo. As for numerical performance comparison, evaluate the performance in terms of a certain metric in each subsection. The results must be illustrated in a table or a figure. Observation/analysis on the evaluation results must be included, which is often written in a sentence like “the performance of XXX method in terms of some metric(s) is XXX” or “the XXX method is XXX percent faster, cheaper, smaller, or otherwise better than XXX”. As for screenshots of demo, explain what the demo is for and the observations.
+%Results: Results could be numerical performance comparison or screenshots of demo. As for numerical performance comparison, evaluate the performance in terms of a certain metric in each subsection. The results must be illustrated in a table or a figure. Observation/analysis on the evaluation results must be included, which is often written in a sentence like “the performance of XXX method in terms of some metric(s) is XXX” or “the XXX method is XXX percent faster, cheaper, smaller, or otherwise better than XXX”. As for screenshots of demo, explain what the demo is for and the observations.
 
 \section{Conclusion and Future Work}
-\par %The conclusion should restate the main activities and contributions of your research project. Future work is not mandatory, which could identify the future directions to improve the work.
-
+%The conclusion should restate the main activities and contributions of your research project. Future work is not mandatory, which could identify the future directions to improve the work.
+The Signal Protocol, apart from being an established industry standard approach for the securing of network communications, is a well studied cryptographic approach for security. \parencite{formalAnalysisSig}\parencite{autoFormalAnalysisSig}
+\par This may be credited in largest part to its open source nature: the protocol documentation is open for anyone to read \parencite{website:signal-docs}, as well as source code being openly available for one of its key implementations \parencite{website:sigOpenSource}. 
+\par However, the protocol as described here and as implemented in our project has limitations. The protocol may be extended to more than two members, but in application this rapidly becomes unfeasible: sessions must establish X3DH exchanges from every member to every other member, and similarly for the header-based key updating between messages. Such group exchanges are in practice mediated by the Sesame algorithm \parencite{website:sigSesame}, but is outside the course of our project implementation (and thus this report).
+\par Furthermore, there are limitations to the practical security that the Signal Protocol provides. The protocol does not prohibit an attacker from simply spying on the screen of the device which the user is communicating through (a so-called \textit{shoulder surfing} attack), nor does it prevent a keylogger from being able to read what a user is sending. Any security which the protocol assures (which, as mentioned before, has been audited by reputable, peer-reviewed research \parencite{formalAnalysisSig}\parencite{autoFormalAnalysisSig}) is solely on the application software and network levels. It does not extend to device and physical security, either by design or by practice.
+\par Further work in placing secure systems at the hands of users is ongoing, and is a promising area of research and development, especially as the increasing collection and usage of individual data becomes more and more relevant in governmental and industry settings.
 
 
 
 
 \newpage
 \section{References}
-%1. Nadim Kobeissi, Karthikeyan Bhargavan, Bruno Blanchet. Automated Verification for Secure Messaging Protocols and Their Implementations: A Symbolic and Computational Approach. 2nd IEEE European Symposium on Security and Privacy, Apr 2017, Paris, France. pp.435 - 450, ?10.1109/EuroSP.2017.38. Hal-01575923
-
-%2. K. Cohn-Gordon, C. Cremers, B. Dowling, L. Garratt and D. Stebila, "A Formal Security Analysis of the Signal Messaging Protocol," 2017 IEEE European Symposium on Security and Privacy (EuroS\&P), 2017, pp. 451-466, doi: 10.1109/EuroSP.2017.27.
 \printbibliography
 
 \end{document}
