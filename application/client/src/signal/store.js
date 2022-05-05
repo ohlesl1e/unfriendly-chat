@@ -44,7 +44,6 @@ SignalProtocolStore.prototype = {
       throw new Error("Tried to remove value for undefined/null key");
     delete this.store[key];
   },
-
   isTrustedIdentity: function (identifier, identityKey, direction) {
     if (identifier === null || identifier === undefined) {
       throw new Error("tried to check identity key for undefined/null key");

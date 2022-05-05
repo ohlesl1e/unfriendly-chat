@@ -38,7 +38,8 @@ function Home() {
       const result = await axios.get('http://localhost:4000/room/allrooms', { params: { uid: userId } })
       console.log(result.data)
 
-      setRooms(result.data.rooms);
+      setRooms(result.data.rooms)
+      localStorage.setItem('rooms', JSON.stringify(result.data.rooms))
     }
   }, [])
 

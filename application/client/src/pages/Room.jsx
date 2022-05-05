@@ -13,6 +13,7 @@ import {
     SessionCipher
 } from '@privacyresearch/libsignal-protocol-typescript'
 import SignalProtocolStore from '../signal/store'
+import { signalStore } from '../signal/state'
 
 // Routing
 import {
@@ -45,7 +46,6 @@ function Room() {
 
     const sendable = useRef(true)
     const [messages, setMessages] = useState([])
-    const [preKeyBundle, setPreKeyBundle] = useState({})
 
     const [user, setUser] = useState(() => {
         const savedUser = localStorage.getItem("user")
@@ -59,6 +59,13 @@ function Room() {
         const username = sessionStorage.getItem("unfriendly_user")
         const session = { userId, username, sessionId }
         return session
+    })
+
+    const [recipientUsername, setRecipientUsername] = useState(() => {
+        const rooms = JSON.parse(localStorage.getItem('rooms'))
+        const thisRoom = rooms.find((room) => room._id == id)
+        const recipient = thisRoom.user.find((user) => user._id != userSession.userId)
+        return recipient.username
     })
 
     // Init socket
@@ -81,9 +88,10 @@ function Room() {
     const receipientRef = useRef('')
 
     // Signal Sessions
-    const signalStore = new SignalProtocolStore()
-    const [receipientAddress, setReceipientAddress] = useState('')
-
+    const [preKeyBundle, setPreKeyBundle] = useState({})
+    const [sessionBuilder, setSessionBuilder] = useState(new SessionBuilder())
+    const [sessionCipher, setSessionCipher] = useState(new SessionCipher())
+    const [recipientAddress, setRecipientAddress] = useState(new SignalProtocolAddress())
 
     // Handle Socket IO listening events
     // NOTES: This side effect would run once after component mounting
@@ -94,10 +102,23 @@ function Room() {
 
         // Get prekeys bundle for state
         if (id !== 'new') {
+            // get messages from local storage
             getMessage()
 
-            // Get prekeys from browser local storage
-            if (localStorage.getItem(`key_${id}`)) {
+            // start session
+            const address = new SignalProtocolAddress(recipientUsername, 1)
+            const sessionBuilder = new SessionBuilder(signalStore, address)
+            setRecipientAddress(address)
+            setSessionBuilder(sessionBuilder)
+
+            // process prekeys
+            const processPrekeys = async (prekeys) => {
+                const session = await sessionBuilder.processPreKey(prekeys)
+                setSessionCipher(new SessionCipher(signalStore, address))
+            }
+            
+            // Get prekeys bundle
+            if (localStorage.getItem(`key_${id}`)) { // from browser local storage
                 let { identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
                 identityPubKey = binaryStringToArrayBuffer(identityPubKey)
                 signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
@@ -106,28 +127,35 @@ function Room() {
                     key.publicKey = binaryStringToArrayBuffer(key.publicKey)
                 })
                 setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
-            } else { // Get prekeys from server, then save to browser local storage
+
+                processPrekeys({ identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                    .catch(console.error)
+            } else { // from server, then save to browser local storage
                 axios.get(`http://localhost:4000/room/${id}`)
-                    .then(res => {
-                        let { user } = res.data
-                        user.forEach(value => {
+                .then(res => {
+                    let { user } = res.data
+                    user.forEach(value => {
                         if (userSession.userId !== value._id) { // get prekeys from recipient user
-                                console.log(value)
-                                let { identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
-                                localStorage.setItem(`key_${id}`, JSON.stringify({ identityPubKey, signedPreKey, oneTimePreKeys }))
-                                identityPubKey = binaryStringToArrayBuffer(identityPubKey)
-                                signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
-                                signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
-                                oneTimePreKeys.forEach(key => {
-                                    key.publicKey = binaryStringToArrayBuffer(key.publicKey)
-                                })
-                                setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
-                            }
-                        })
-                    }).catch(err => {
-                        console.log(err)
+                            console.log(value)
+                            let { identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
+                            localStorage.setItem(`key_${id}`, JSON.stringify({ identityPubKey, signedPreKey, oneTimePreKeys }))
+                            identityPubKey = binaryStringToArrayBuffer(identityPubKey)
+                            signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
+                            signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
+                            oneTimePreKeys.forEach(key => {
+                                key.publicKey = binaryStringToArrayBuffer(key.publicKey)
+                            })
+                            setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
+
+                            processPrekeys({ identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                                .catch(console.error)
+                        }
                     })
+                }).catch(err => {
+                    console.log(err)
+                })
             }
+
         }
 
         // new message event + add new message to current messages thread
@@ -231,7 +259,12 @@ function Room() {
         storeMessage([...messages, newMessage])
 
         // TODO - encrypt
-        // let ciphertext = sessionCipher.encrypt()
+        let ciphertext = sessionCipher.encrypt(new TextEncoder().encode(messageRef.current.value).buffer)
+        console.log('message:')
+        console.log(messageRef.current.value)
+
+        console.log('ciphertext:')
+        console.log(ciphertext)
 
         // emit new message to socket
         socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })

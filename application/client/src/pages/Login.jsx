@@ -4,6 +4,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router'
 import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
 import { arrayBufferToString } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
+import { signalStore } from '../signal/state'
 
 export default function Login() {
   let navigate = useNavigate()
@@ -84,6 +85,12 @@ export default function Login() {
       ]
     }
 
+    // create identity for current user
+    signalStore.put('registrationID', uid)
+    signalStore.put('identityKey', identityKeyPair)
+    // signalStore.storePreKey(`${baseKeyId}`, preKey.keyPair)
+    // signalStore.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair)
+    
     localStorage.setItem(`unfriendly_key`, JSON.stringify({
       registrationID: uid,
       identityKey: {
