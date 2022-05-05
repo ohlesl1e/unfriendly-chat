@@ -1,12 +1,5 @@
 import { SignalProtocolAddress } from '@privacyresearch/libsignal-protocol-typescript'
-
-// Helper function
-function toString (thing) {
-    if (typeof thing == 'string') {
-        return thing;
-    }
-    return new dcodeIO.ByteBuffer.wrap(thing).toString('binary');
-}
+import { arrayBufferToString } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 
 // The Signal Protocol Store class needed for building session
 function SignalProtocolStore() {
@@ -55,7 +48,7 @@ SignalProtocolStore.prototype = {
     if (trusted === undefined) {
       return Promise.resolve(true);
     }
-    return Promise.resolve(toString(identityKey) === toString(trusted));
+    return Promise.resolve(arrayBufferToString(identityKey) === arrayBufferToString(trusted));
   },
   loadIdentityKey: function (identifier) {
     if (identifier === null || identifier === undefined)
@@ -66,12 +59,12 @@ SignalProtocolStore.prototype = {
     if (identifier === null || identifier === undefined)
       throw new Error("Tried to put identity key for undefined/null key");
 
-    var address = new SignalProtocolAddress.fromString(identifier);
+    var address = SignalProtocolAddress.fromString(identifier);
 
     var existing = this.get('identityKey' + address.getName());
     this.put('identityKey' + address.getName(), identityKey)
 
-    if (existing && toString(identityKey) !== toString(existing)) {
+    if (existing && arrayBufferToString(identityKey) !== arrayBufferToString(existing)) {
       return Promise.resolve(true);
     } else {
       return Promise.resolve(false);

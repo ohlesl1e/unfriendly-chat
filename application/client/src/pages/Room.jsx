@@ -247,7 +247,7 @@ function Room() {
         }
     }
 
-    const addMessage = () => {
+    const addMessage = async () => {
         let newMessage = {
             username: userSession.username,
             message: messageRef.current.value,
@@ -259,7 +259,7 @@ function Room() {
         storeMessage([...messages, newMessage])
 
         // TODO - encrypt
-        let ciphertext = sessionCipher.encrypt(new TextEncoder().encode(messageRef.current.value).buffer)
+        let ciphertext = await sessionCipher.encrypt(new TextEncoder().encode(messageRef.current.value).buffer)
         console.log('message:')
         console.log(messageRef.current.value)
 
