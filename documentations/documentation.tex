@@ -1,0 +1,142 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+%\usepackage{setspace} default should be single spacing now
+\usepackage[all]{nowidow}
+\usepackage{newtxtext} %for times new roman typeface
+\usepackage{newtxmath} %for times new roman math equations
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{hyperref}
+%\newtheorem*{proposition}{Proposition}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+
+\usepackage[
+backend=biber,
+style=numeric,
+sorting=none
+]{biblatex}
+
+\addbibresource{mybib.bib}
+
+\title{%
+    Unfriendly Chat\\
+    \large Team Wu-Tang LAN}
+\author{Leslie Zhou (team lead)\\ Khanh Nguyen \\ Warren Singh}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction}
+%Background: Provide a context and background information for the readers to understand the motivation and significance of your project. Use statistics, news or other evidence to demonstrate the importance of the project.
+In 2013, Edward “Ed” Snowden, a 29 year old government contractor who was a former technical assistant for the CIA and current employee of defense contractor Booz Allen Hamilton came forward with startling revelations: the United States government was indiscriminately collecting and spying on the internet communications of a huge majority of the English speaking world \parencite{website:snowden}. While security concerns are part of network engineering, major service providers and technology companies did not typically prioritize security at the time. Due to the revelations, securing their services and communications became a top priority, as the scope and extent of the ‘bulk collections’ programs that were being run by the NSA shocked even industry insiders.
+\par Within six months, prominent companies such as Facebook, Twitter, and Google began implementing upgrades to both internal and external systems \parencite{website:nytimes}, and many consider this new approach to be the reason for the quick and widespread adoption of stronger security and end-to-end encryption protocols \parencite{website:newsweek}. 
+
+\par %Problem Introduce the specific problem that your project aims to solve Explain why this problem is important.
+But how do technology companies actually secure communications and services for their users? Users will be less likely to use services which do not offer security and privacy, and in general societies are thought to suffer when they cannot protect the privacy of their citizens. 
+\par One open source cryptography project \parencite{website:open-source} is an industry leading standard \parencite{website:signal-widespread} for end-to-end encryption, developed in the wake of the Snowden revelations: the Signal Protocol. The Signal Protocol \parencite{website:signal-docs} is a non-federated cryptographic protocol which is most widely used to ensure end-to-end encryption for communication applications (i.e. text-based messaging and VoIP). Applications which currently implement the Signal Protocol include Google’s Messages, Facebook Messenger, Whatsapp, and Skype \parencite{website:signal-widespread}, meaning the number of users whose messages are secured by the Signal Protocol potentially number in the billions (this matches the scope of the problem, as there are billions of users of electronic technologies around the world).
+
+\par %Goal and Contribution: This paragraph offers the main claim of your project and previews what the readers will learn in the remainder of this report. It should also state the scope of your project.
+Due to its widespread use, broad influences, intended effect, and open sourced approach, examining the protocol thoroughly is crucial in understanding how industry leaders secure both internal and external network communications, as well as providing a foundation for apprehending and developing further iterations and applications, since developers working on applications continue to use the Signal Protocol as foundation and inspiration for further encryption protocol development.\parencite{website:global-adoption}\parencite{website:viber}\parencite{website:forsta}\parencite{website:forsta-gh} Through the course of this project by which we implement the protocol in a real-time chat application setting, we seek to gain an understanding of this industry standard technology, and transmit that to our colleagues for their benefit as well. 
+
+\par% Outline: Give a roadmap of the rest of this report.
+The remainder of this report will details the overview, methods, and results of the implementation of the Signal Protocol. A high level understanding of the protocol is available to the general reader, while others may wish to examine the citations for further exploration.
+
+
+\newpage
+\section{Project Description}
+%Overview: Describe the overall design of your solution with a flowchart to illustrate the workflow, if possible.
+
+\subsection{Overview}
+The actual implementation of the project involves the connecting of a user facing react web chat application with the actual implementation of the cryptographic protocols and algorithms, which are hidden from the user.
+\par A separate server instance is used to store the pre-keys for the initial part of the Signal protocol (which is elaborated on in detail in the Methods section immediately following). 
+\par Various so-called cryptographic primitives (which are, in other words, the basic building blocks which make up systems for encryption and security: common examples are one-way hash functions or onion routing/proxy server based 'mix networks') are relied on in the course of the implementation of the actual cryptographic protocols, specifically public/private key pairs for signing from elliptic curve 25519 Diffie-Hellman functions, AES 256 bit encryption for cleartext/ciphertext conversion with respect to the user-generated messages, and HKDF for the key derivation (so-called 'ratcheting') functionality. (more details on these in the methods section which follows)
+\par The authors wish to thank at this time in particular M. Marlinspike and his colleagues at the Signal Foundation\parencite{website:sigfound}, as well as R. Schmidt and M. E. Johnson at Privacy Research LLC \parencite{website:prllc} for their work and generosity. Due to the time constraints of this project, as well as the relatively limited technical expertise and experience of the project team, use of open source libraries and documentation in the project implementation proved necessary under the scope and bounds of the work done. Specific citations follow in the text where appropriate, but in general the materials that these two groups made publically available were very helpful in the research and implementation process. \parencite{website:signal-docs}\parencite{website:prggh}\parencite{website:siglibjavascript}\parencite{website:prglibsigtypescript}\parencite{website:prglibsigdemo}
+\par A high-level illustrative flowchart of the project overview is shown on the next page.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{images/spi-flow.png}
+    \caption{A flowchart illustrating an overview of the overall project design}
+    \label{fig:my_label1}
+\end{figure}
+
+\newpage
+\subsection{Method(s)}
+%Elaborate the core components in the workflow of the design, one in each subsection. As for each component, describe the method(s) used in detail.
+\subsubsection{React front end}
+\subsubsection{Server back end}
+\subsubsection{Pre-Key Caching}
+Each user, on registration to the chat service (or, more generally, whatever service is being provided) has a set of keys generated by the application service, some of which are sent to a server for storage and later use. These keys are used in protocol for creation and verification of Edwards-curve Digital Signature Algorithm (EdDSA) compatible digital signatures, as well as for the actual keys sent to the server. \parencite{website:sigdocXEdDSA} 
+\par The keys sent to the server form a set of elliptic curve public keys, containing a user identity key, a signed pre-key, a pre-key signature (comprised of a signed identity and signed pre-key), and a set of one-time pre-keys \parencite{website:sigdocX3DH} (the actual number of these one-time pre-keys is not defined, but in use is typically more than ten or so, with automatic generation and uploading for 'refilling' to the server when the number runs lower than some developer-defined amount).
+\par The actual implementation of the elliptic curve functions is based on (open-source) C libraries (which is typical for lower-level encryption processes, since lower level languages enable easier access to raw calculations and faster computations), which are then wrapped in higher level languages for access and implementation. \parencite{website:prglibsigtypescriptCurve25519}\parencite{website:prglibsigtypescriptCurve25519rawC}
+\par Here in this implementation, we note that the specific elliptic curve used is Curve 25519.
+
+\subsubsection{Triple Diffie-Hellman exchange}
+Suppose we have a user Alice who registers with a messaging application which implements the Signal Protocol and wishes to message Bob, another user of the messaging application. In this case, they must establish a shared secret to begin trading messages which each can in turn encrypt and decrypt. 
+\par They do this by using a variant of the Diffie-Hellman protocol known as the triple Diffie-Hellman exchange (X3DH). X3DH uses five elliptic curve public keys, which include both Alice and Bob's public identity keys ($IK_A, IK_B$ respectively), as well as one of Bob's pre-keys ($OPK_B$) and Bob's signed prekey bundle ($SPK_B$).\parencite{website:sigdocX3DH}
+\par Then, the procedure performs (for Alice) a Diffie-Hellman exchange up to four times (but at least three times) in the following way: 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=10cm]{images/x3dh.png}
+    \caption{An overview of the Triple Diffie-Hellman exchange\parencite{website:sigdocX3DH}}
+    \label{fig:my_label2}
+\end{figure}
+
+\newpage 
+\par The first two exchanges guarantee authentication of each party (as one might surmise given that they involve each of Alice and Bob's identity public keys), while the latter two provide forward secrecy (including, among other things, a prevention of so-called \textit{replay} attacks). 
+\par Assuming that all four exchanges occur, Alice now has four outputs from the Diffie-Hellmans, which are concatenated in order and then used as input to the Key Derivation function for the first secret key (symmetric) for the message encryption and decryption.
+\par Then, Alice sends Bob an initial message containing the necessary information for Bob to replicate the X3DH on his end, such that both parties now have a shared secret key for beginning message exchange, encryption, and decryption.
+\par We pause to note that the Signal Protocol does not guarantee that the public identity key purporting to correspond to the intended recipient is actually under the sole control of the intended recipient: in actual implementation (such as with the Signal Messaging application), verification occurs \textit{out of band} (meaning not involving digital communications mediated by the Signal Protocol). Each user opens a specific window on their piece of application software and can verify the \textit{fingerprint} (the details of which an interested reader may further research as an exercise) of their identity public key, either in a physical meeting, or perhaps in a real-time video teleconference.
+ 
+
+
+\subsubsection{Double Ratchet Algorithm}
+The Double Ratchet Algorithm is most relevant once a communication session is established and preliminary work (the preceding sections) are out of the way. \parencite{website:sigdocdoubleratchet} Once a shared secret is established, it is used as the basis for a secret key for message encryption and decryption using AES-256 encryption for the messages, and as input to a Key Derivation Function (KDF). The KDF in the Signal Protocol is most often implemented with SHA-256 or SHA-512 (the hashing algorithms); here it is SHA-256. \par Because of the use of hashing, each subsequent key is arrived at via a so-called \textit{one way} function: even if an adversary accessed this key, they would not be able to derive previous keys. This is the source of \textit{forward} secrecy, and one of the ratchets in the nomenclature of the Double Ratchet Algorithm. (since a mechanical ratchet only turns one way, this is used in general language to indicate the one way function of some operation)
+\par Each time the secret key is used in the KDF, the two important outputs are keys: a message key used for encryption and decryption, and a chain key, used as input to derive the next keys. (there is a third output, which serves as an \textit{initial vector} (iv) for the AES-256 message encryption, but the details of CBC mode AES encryption are outside the scope of the project and this report)
+\par Each participant keeps two chains of keys, where the sending chain of Alice matches the receiving chain of Bob, and vice versa such that they can send and receive encrypted messages.
+\par The astute reader might here find an issue: if an adversary got a hold of a key, they might not be able to go backward and derive \textit{previous} keys in order to read previous messages in the conversation history, but they would be able to use the KDF (since the specifications are open source, there are a limited number of possible KDFs in use for any service which implements the Signal Protocol) to get a hold of any and all \textit{future} keys, thus compromising the integrity of any following communications after the inital key disclosure.
+\par This is where the second ratchet comes into play. Each message contains within its header a new input for a new Diffie-Hellman exchange, and each party then feeds the resulting shared secret into the input for the KDF. Thus the KDF has two inputs: the previous key, and this new shared Diffie-Hellman secret, which provides additional entropy.
+\par Thus, even if a key is obtained by an outside party, only the corresponding message is vulnerable; once the new input to the KDF is processed, the following key is secure since it cannot be obtained from just the previous key.
+\par Therefore, the Double Ratchet Algorithm provides secrecy for the communications it encrypts both forward and backward in sequence, and logically derives its name from this property. 
+
+
+\subsubsection{Analysis by Packet Examination}
+%how, results actually follow in results section below 
+
+\newpage
+\section{Demo/Evaluation}
+\subsection{Experimental Setup}
+%Experimental Setup: Describe how the experiments/demo are conducted to evaluate the performance of the project. Name the hardware and/or software used in the experiments. Summarize the key parameters of the experiments in a table, if needed.
+
+\subsection{Results}
+%Results: Results could be numerical performance comparison or screenshots of demo. As for numerical performance comparison, evaluate the performance in terms of a certain metric in each subsection. The results must be illustrated in a table or a figure. Observation/analysis on the evaluation results must be included, which is often written in a sentence like “the performance of XXX method in terms of some metric(s) is XXX” or “the XXX method is XXX percent faster, cheaper, smaller, or otherwise better than XXX”. As for screenshots of demo, explain what the demo is for and the observations.
+
+\section{Conclusion and Future Work}
+%The conclusion should restate the main activities and contributions of your research project. Future work is not mandatory, which could identify the future directions to improve the work.
+The Signal Protocol, apart from being an established industry standard approach for the securing of network communications, is a well studied cryptographic approach for security. \parencite{formalAnalysisSig}\parencite{autoFormalAnalysisSig}
+\par This may be credited in largest part to its open source nature: the protocol documentation is open for anyone to read \parencite{website:signal-docs}, as well as source code being openly available for one of its key implementations \parencite{website:sigOpenSource}. 
+\par However, the protocol as described here and as implemented in our project has limitations. The protocol may be extended to more than two members, but in application this rapidly becomes unfeasible: sessions must establish X3DH exchanges from every member to every other member, and similarly for the header-based key updating between messages. Such group exchanges are in practice mediated by the Sesame algorithm \parencite{website:sigSesame}, but is outside the course of our project implementation (and thus this report).
+\par Furthermore, there are limitations to the practical security that the Signal Protocol provides. The protocol does not prohibit an attacker from simply spying on the screen of the device which the user is communicating through (a so-called \textit{shoulder surfing} attack), nor does it prevent a keylogger from being able to read what a user is sending. Any security which the protocol assures (which, as mentioned before, has been audited by reputable, peer-reviewed research \parencite{formalAnalysisSig}\parencite{autoFormalAnalysisSig}) is solely on the application software and network levels. It does not extend to device and physical security, either by design or by practice.
+\par Further work in placing secure systems at the hands of users is ongoing, and is a promising area of research and development, especially as the increasing collection and usage of individual data becomes more and more relevant in governmental and industry settings.
+
+
+
+
+\newpage
+\section{References}
+\printbibliography
+
+\end{document}
