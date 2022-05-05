@@ -12,7 +12,6 @@ import {
     SessionBuilder,
     SessionCipher
 } from '@privacyresearch/libsignal-protocol-typescript'
-import SignalProtocolStore from '../signal/store'
 import { signalStore } from '../signal/state'
 
 // Routing
@@ -102,6 +101,7 @@ function Room() {
 
         // Get prekeys bundle for state
         if (id !== 'new') {
+            console.log('room... useeffect running again?')
             // get messages from local storage
             getMessage()
 
@@ -159,17 +159,25 @@ function Room() {
         }
 
         // new message event + add new message to current messages thread
-        socket.current.on('receive', ({ sender, message }) => {
+        socket.current.on('receive', async ({ sender, message }) => {
             // dont listen to receive event if sender is also you
             if (sender == userSession.username) return
 
             // TODO - decrypt
-            // let plaintext = sessionCipher.decrypt()
+            const sessionCipher = new SessionCipher(signalStore, new SignalProtocolAddress(recipientAddress, 1))
+            let plaintext = new Uint8Array().buffer
+            plaintext = await sessionCipher.decryptPreKeyWhisperMessage(
+                message.body,
+                "binary"
+            )
+            const stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
+            console.log('stringPlaintext:');
+            console.log(stringPlaintext);
 
             // TODO - refactor adding new message - for this and socket.on(receive)
             let newMessage = {
                 username: sender || 'other person....',
-                message: message,
+                message: message.body,
             }
 
             // add new message to thread
@@ -266,8 +274,9 @@ function Room() {
         console.log('ciphertext:')
         console.log(ciphertext)
 
+        // TODO - testing decrypt
         // emit new message to socket
-        socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })
+        socket.current.emit('message', { sender: userSession.username, message: ciphertext })
 
         // clear message chat input
         messageRef.current.value = ''

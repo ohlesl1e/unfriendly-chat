@@ -88,6 +88,8 @@ export default function Login() {
     // create identity for current user
     signalStore.put('registrationId', uid)
     signalStore.put('identityKey', identityKeyPair)
+    signalStore.storePreKey(`${baseKeyId}`, preKey.keyPair)
+    signalStore.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair)
 
     localStorage.setItem(`unfriendly_key`, JSON.stringify({
       registrationID: uid,
