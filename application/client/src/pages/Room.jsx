@@ -119,16 +119,16 @@ function Room() {
             
             // Get prekeys bundle
             if (localStorage.getItem(`key_${id}`)) { // from browser local storage
-                let { identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
+                let { registrationId, identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
                 identityPubKey = binaryStringToArrayBuffer(identityPubKey)
                 signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
                 signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
                 oneTimePreKeys.forEach(key => {
                     key.publicKey = binaryStringToArrayBuffer(key.publicKey)
                 })
-                setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
+                setPreKeyBundle({ registrationId, identityPubKey, signedPreKey, oneTimePreKeys })
 
-                processPrekeys({ identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                processPrekeys({ registrationId, identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
                     .catch(console.error)
             } else { // from server, then save to browser local storage
                 axios.get(`http://localhost:4000/room/${id}`)
@@ -137,17 +137,17 @@ function Room() {
                     user.forEach(value => {
                         if (userSession.userId !== value._id) { // get prekeys from recipient user
                             console.log(value)
-                            let { identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
-                            localStorage.setItem(`key_${id}`, JSON.stringify({ identityPubKey, signedPreKey, oneTimePreKeys }))
+                            let { uid, identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
+                            localStorage.setItem(`key_${id}`, JSON.stringify({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys }))
                             identityPubKey = binaryStringToArrayBuffer(identityPubKey)
                             signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
                             signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
                             oneTimePreKeys.forEach(key => {
                                 key.publicKey = binaryStringToArrayBuffer(key.publicKey)
                             })
-                            setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
+                            setPreKeyBundle({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys })
 
-                            processPrekeys({ identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                            processPrekeys({ registrationId: uid, identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
                                 .catch(console.error)
                         }
                     })
