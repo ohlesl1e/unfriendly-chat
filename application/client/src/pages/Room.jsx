@@ -12,7 +12,6 @@ import {
     SessionBuilder,
     SessionCipher
 } from '@privacyresearch/libsignal-protocol-typescript'
-import { signalStore } from '../signal/state'
 
 // Routing
 import {
@@ -32,7 +31,7 @@ const PhantomMessage = () => {
     return <div ref={elementRef} />
 }
 
-function Room() {
+function Room({ store }) {
     // room id from url
     let { id } = useParams()
 
@@ -107,16 +106,16 @@ function Room() {
 
             // start session
             const address = new SignalProtocolAddress(recipientUsername, 1)
-            const sessionBuilder = new SessionBuilder(signalStore, address)
+            const sessionBuilder = new SessionBuilder(store, address)
             setRecipientAddress(address)
             setSessionBuilder(sessionBuilder)
 
             // process prekeys
             const processPrekeys = async (prekeys) => {
                 const session = await sessionBuilder.processPreKey(prekeys)
-                setSessionCipher(new SessionCipher(signalStore, address))
+                setSessionCipher(new SessionCipher(store, address))
             }
-            
+
             // Get prekeys bundle
             if (localStorage.getItem(`key_${id}`)) { // from browser local storage
                 let { registrationId, identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
@@ -132,28 +131,28 @@ function Room() {
                     .catch(console.error)
             } else { // from server, then save to browser local storage
                 axios.get(`http://localhost:4000/room/${id}`)
-                .then(res => {
-                    let { user } = res.data
-                    user.forEach(value => {
-                        if (userSession.userId !== value._id) { // get prekeys from recipient user
-                            console.log(value)
-                            let { uid, identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
-                            localStorage.setItem(`key_${id}`, JSON.stringify({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys }))
-                            identityPubKey = binaryStringToArrayBuffer(identityPubKey)
-                            signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
-                            signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
-                            oneTimePreKeys.forEach(key => {
-                                key.publicKey = binaryStringToArrayBuffer(key.publicKey)
-                            })
-                            setPreKeyBundle({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys })
+                    .then(res => {
+                        let { user } = res.data
+                        user.forEach(value => {
+                            if (userSession.userId !== value._id) { // get prekeys from recipient user
+                                console.log(value)
+                                let { uid, identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
+                                localStorage.setItem(`key_${id}`, JSON.stringify({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys }))
+                                identityPubKey = binaryStringToArrayBuffer(identityPubKey)
+                                signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
+                                signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
+                                oneTimePreKeys.forEach(key => {
+                                    key.publicKey = binaryStringToArrayBuffer(key.publicKey)
+                                })
+                                setPreKeyBundle({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys })
 
-                            processPrekeys({ registrationId: uid, identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
-                                .catch(console.error)
-                        }
+                                processPrekeys({ registrationId: uid, identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                                    .catch(console.error)
+                            }
+                        })
+                    }).catch(err => {
+                        console.log(err)
                     })
-                }).catch(err => {
-                    console.log(err)
-                })
             }
 
         }
@@ -164,7 +163,7 @@ function Room() {
             if (sender == userSession.username) return
 
             // TODO - decrypt
-            const sessionCipher = new SessionCipher(signalStore, new SignalProtocolAddress(recipientAddress, 1))
+            const sessionCipher = new SessionCipher(store, new SignalProtocolAddress(recipientAddress, 1))
             let plaintext = new Uint8Array().buffer
             plaintext = await sessionCipher.decryptPreKeyWhisperMessage(
                 message.body,
@@ -203,7 +202,7 @@ function Room() {
             socket.current.close()
             socket.current.disconnect()
         }
-    }, [])
+    }, [socket])
 
     const sendMessage = async (event) => {
         // prevent page refresh on submit form

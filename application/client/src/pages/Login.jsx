@@ -4,9 +4,8 @@ import axios from 'axios'
 import { useNavigate } from 'react-router'
 import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
 import { arrayBufferToString } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
-import { signalStore } from '../signal/state'
 
-export default function Login() {
+export default function Login({ store }) {
   let navigate = useNavigate()
 
   const [toast, setToast] = useState(false)
@@ -86,10 +85,10 @@ export default function Login() {
     }
 
     // create identity for current user
-    signalStore.put('registrationId', uid)
-    signalStore.put('identityKey', identityKeyPair)
-    signalStore.storePreKey(`${baseKeyId}`, preKey.keyPair)
-    signalStore.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair)
+    store.put('registrationId', uid)
+    store.put('identityKey', identityKeyPair)
+    store.storePreKey(`${baseKeyId}`, preKey.keyPair)
+    store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair)
 
     localStorage.setItem(`unfriendly_key`, JSON.stringify({
       registrationID: uid,
@@ -98,10 +97,12 @@ export default function Login() {
         privKey: arrayBufferToString(identityKeyPair.privKey),
       },
       baseKeyId: {
+        id: baseKeyId,
         pubKey: arrayBufferToString(preKey.keyPair.pubKey),
         privKey: arrayBufferToString(preKey.keyPair.privKey),
       },
       signedPreKeyId: {
+        id: signedPreKeyId,
         pubKey: arrayBufferToString(signedPreKey.keyPair.pubKey),
         privKey: arrayBufferToString(signedPreKey.keyPair.privKey),
       },
@@ -115,7 +116,7 @@ export default function Login() {
       preKeyBundle,
     }).then(res => {
       navigate('/')
-      //window.location.reload(false)
+      window.location.reload()
     }).catch((error) => {
       // console.log(error)
       if (error.response) {
