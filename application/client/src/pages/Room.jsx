@@ -168,14 +168,27 @@ function Room({ store }) {
             console.log(address)
             const sessionCipher = new SessionCipher(store, address)
             console.log(sessionCipher)
+            let { type, body } = message
+
             let plaintext = new Uint8Array().buffer
-            plaintext = await sessionCipher.decryptPreKeyWhisperMessage(
-                message.body,
+            if (type === 3) {
+              plaintext = await sessionCipher.decryptPreKeyWhisperMessage(
+                body,
                 "binary"
-            ).catch((e) => {
+              ).catch((e) => {
                 console.log('error after decrypt....?')
                 console.log(e)
             })
+            } else if (type === 1) {
+              plaintext = await sessionCipher.decryptWhisperMessage(
+                body,
+                "binary"
+              ).catch((e) => {
+                console.log('error after decrypt....?')
+                console.log(e)
+                })
+            }
+
             const stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
             console.log('stringPlaintext:');
             console.log(stringPlaintext);
@@ -209,7 +222,7 @@ function Room({ store }) {
             socket.current.close()
             socket.current.disconnect()
         }
-    }, [socket])
+    }, [])
 
     const sendMessage = async (event) => {
         // prevent page refresh on submit form
