@@ -96,6 +96,8 @@ SignalProtocolStore.prototype = {
     return Promise.resolve(res);
   },
   storeSignedPreKey: function (keyId, keyPair) {
+    console.log('in storeSignedPreKey: ' + keyId)
+    console.log(keyPair)
     return Promise.resolve(this.put('25519KeysignedKey' + keyId, keyPair));
   },
   removeSignedPreKey: function (keyId) {

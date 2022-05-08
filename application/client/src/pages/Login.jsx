@@ -85,10 +85,16 @@ export default function Login({ store }) {
     }
 
     // create identity for current user
+    console.log('Login.jsx... test store keys:')
     store.put('registrationId', uid)
     store.put('identityKey', identityKeyPair)
     store.storePreKey(`${baseKeyId}`, preKey.keyPair)
     store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair)
+    console.log(uid)
+    console.log(identityKeyPair)
+    console.log(preKey.keyPair)
+    console.log(signedPreKey)
+    console.log('END Login.jsx... test store keys:')
 
     localStorage.setItem(`unfriendly_key`, JSON.stringify({
       registrationID: uid,

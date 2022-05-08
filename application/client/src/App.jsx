@@ -36,7 +36,7 @@ function App() {
 
     useEffect(() => {
         console.log(userSession)
-        if (userSession == null) {
+        if (userSession && userSession.userId == null && userSession.sessionId == null && userSession.username == null) {
             return
         } else {
             // set userSession
@@ -46,19 +46,26 @@ function App() {
             setUserSession({ userId, username, sessionId })
 
             // pull keys from localstorage
-            const { registrationID, identityKey, baseKeyId, signedPreKeyId } = JSON.parse(localStorage.getItem('unfriendly_key'))
-            signalStore.put('registrationId', registrationID)
+            const keys = localStorage.getItem('unfriendly_key')
+            if (keys) {
+                const { registrationID, identityKey, baseKeyId, signedPreKeyId } = JSON.parse(keys)
 
-            const parsedIdentityKey = parseKeyPair(identityKey)
-            signalStore.put('identityKey', parsedIdentityKey)
+                console.log('App.jsx ... keys:')
+                console.log(JSON.parse(keys))
 
-            const parsedBaseKey = parseKeyPair(baseKeyId)
-            signalStore.storePreKey(`${baseKeyId.id}`, parsedBaseKey)
+                signalStore.put('registrationId', registrationID)
 
-            const parsedSignedPreKey = parseKeyPair(signedPreKeyId)
-            signalStore.storeSignedPreKey(signedPreKeyId.id, parsedSignedPreKey)
+                const parsedIdentityKey = parseKeyPair(identityKey)
+                signalStore.put('identityKey', parsedIdentityKey)
 
-            console.log(signalStore)
+                const parsedBaseKey = parseKeyPair(baseKeyId)
+                signalStore.storePreKey(`${baseKeyId.id}`, parsedBaseKey)
+
+                const parsedSignedPreKey = parseKeyPair(signedPreKeyId)
+                signalStore.storeSignedPreKey(signedPreKeyId.id, parsedSignedPreKey)
+
+                console.log(signalStore)
+            }
         }
     }, [])
 

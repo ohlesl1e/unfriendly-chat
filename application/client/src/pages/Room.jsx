@@ -87,9 +87,6 @@ function Room({ store }) {
 
     // Signal Sessions
     const [preKeyBundle, setPreKeyBundle] = useState({})
-    const [sessionBuilder, setSessionBuilder] = useState(new SessionBuilder())
-    const [sessionCipher, setSessionCipher] = useState(new SessionCipher())
-    const [recipientAddress, setRecipientAddress] = useState(new SignalProtocolAddress())
 
     // Handle Socket IO listening events
     // NOTES: This side effect would run once after component mounting
@@ -107,13 +104,13 @@ function Room({ store }) {
             // start session
             const address = new SignalProtocolAddress(recipientUsername, 1)
             const sessionBuilder = new SessionBuilder(store, address)
-            setRecipientAddress(address)
-            setSessionBuilder(sessionBuilder)
+            console.log('in useeffect... starting session, recip address:')
 
             // process prekeys
             const processPrekeys = async (prekeys) => {
-                const session = await sessionBuilder.processPreKey(prekeys)
-                setSessionCipher(new SessionCipher(store, address))
+                console.log('in processPrekeys.... for user ' + userSession.username)
+                console.log(prekeys)
+                await sessionBuilder.processPreKey(prekeys)
             }
 
             // Get prekeys bundle
@@ -163,12 +160,22 @@ function Room({ store }) {
             if (sender == userSession.username) return
 
             // TODO - decrypt
-            const sessionCipher = new SessionCipher(store, new SignalProtocolAddress(recipientAddress, 1))
+            console.log('in socket receive....')
+            console.log('message is:')
+            console.log(message)
+            console.log(recipientUsername)
+            const address = new SignalProtocolAddress(recipientUsername, 1)
+            console.log(address)
+            const sessionCipher = new SessionCipher(store, address)
+            console.log(sessionCipher)
             let plaintext = new Uint8Array().buffer
             plaintext = await sessionCipher.decryptPreKeyWhisperMessage(
                 message.body,
                 "binary"
-            )
+            ).catch((e) => {
+                console.log('error after decrypt....?')
+                console.log(e)
+            })
             const stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
             console.log('stringPlaintext:');
             console.log(stringPlaintext);
@@ -176,7 +183,7 @@ function Room({ store }) {
             // TODO - refactor adding new message - for this and socket.on(receive)
             let newMessage = {
                 username: sender || 'other person....',
-                message: message.body,
+                message: stringPlaintext,
             }
 
             // add new message to thread
@@ -266,6 +273,11 @@ function Room({ store }) {
         storeMessage([...messages, newMessage])
 
         // TODO - encrypt
+        console.log('in socket sending....')
+        const address = new SignalProtocolAddress(recipientUsername, 1)
+        console.log(address)
+        const sessionCipher = new SessionCipher(store, address)
+
         let ciphertext = await sessionCipher.encrypt(new TextEncoder().encode(messageRef.current.value).buffer)
         console.log('message:')
         console.log(messageRef.current.value)
@@ -273,7 +285,6 @@ function Room({ store }) {
         console.log('ciphertext:')
         console.log(ciphertext)
 
-        // TODO - testing decrypt
         // emit new message to socket
         socket.current.emit('message', { sender: userSession.username, message: ciphertext })
 
