@@ -1,38 +1,53 @@
+// State management
 import React, { useState, useRef, useEffect } from 'react'
-import { Toast, ToastContainer } from 'react-bootstrap'
-import axios from 'axios'
-import { io } from "socket.io-client"
-import { binaryStringToArrayBuffer } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
 
+// Backend + Socket
+import axios from 'axios'
+import { io } from 'socket.io-client'
+
+// Signal Protocol related libraries
+import { binaryStringToArrayBuffer } from '@privacyresearch/libsignal-protocol-typescript/lib/helpers';
+import {
+    SignalProtocolAddress,
+    SessionBuilder,
+    SessionCipher
+} from '@privacyresearch/libsignal-protocol-typescript'
+
+// Routing
 import {
     useNavigate,
     useParams
-} from "react-router-dom";
-import { Message } from '../components';
-import { useWindowSize } from '../components/resize';
+} from 'react-router-dom'
 
+// Components
+import { Toast, ToastContainer } from 'react-bootstrap'
+import { Message } from '../components'
+import { useWindowSize } from '../components/resize'
+
+// Handle autoscroll for message thread
 const PhantomMessage = () => {
-    const elementRef = useRef();
-    useEffect(() => elementRef.current.scrollIntoView());
-    return <div ref={elementRef} />;
+    const elementRef = useRef()
+    useEffect(() => elementRef.current.scrollIntoView())
+    return <div ref={elementRef} />
 }
 
-function Room() {
+function Room({ store }) {
+    // room id from url
+    let { id } = useParams()
+
     const navigate = useNavigate()
     const height = useWindowSize()
 
-    const newMessageContainer = useRef()
     const [toast, setToast] = useState(false)
     const [toastMessage, setToastMessage] = useState('')
 
     const sendable = useRef(true)
-    const [messages, setMessages] = useState([]);
-    const [preKeyBundle, setPreKeyBundle] = useState({});
+    const [messages, setMessages] = useState([])
 
     const [user, setUser] = useState(() => {
-        const savedUser = localStorage.getItem("user");
-        const initialValue = JSON.parse(savedUser);
-        return initialValue || {};
+        const savedUser = localStorage.getItem("user")
+        const initialValue = JSON.parse(savedUser)
+        return initialValue || {}
     })
 
     const [userSession, setUserSession] = useState(() => {
@@ -43,17 +58,14 @@ function Room() {
         return session
     })
 
-    // room id from url
-    let { id } = useParams()
+    const [recipientUsername, setRecipientUsername] = useState(() => {
+        const rooms = JSON.parse(localStorage.getItem('rooms'))
+        const thisRoom = rooms.find((room) => room._id == id)
+        const recipient = thisRoom.user.find((user) => user._id != userSession.userId)
+        return recipient.username
+    })
 
-    // const [socket, setSocket] = useState(io(
-    //   `http://localhost:8080`,
-    //   {
-    //     query: { roomid: id },
-    //     reconnection: true,
-    //   }
-    // ))
-
+    // Init socket
     const socket = useRef(io(
         `http://localhost:8080`,
         {
@@ -65,87 +77,127 @@ function Room() {
             reconnection: true,
         }
     ))
+
+    // Reference message chat input
     const messageRef = useRef('')
+
+    // Reference recipient username input
     const receipientRef = useRef('')
 
+    // Signal Sessions
+    const [preKeyBundle, setPreKeyBundle] = useState({})
 
-    // const socket = io("http://localhost:8080", {
-    //   query: { roomid: id },
-    // });
-
-    // some socket io connect stuff
+    // Handle Socket IO listening events
+    // NOTES: This side effect would run once after component mounting
     useEffect(() => {
-        // connect
-        //socket.on('connect', () => console.log(socket.id))
-        //console.log(socketRef.current);
 
+        // Get prekeys bundle for state
         if (id !== 'new') {
+            console.log('room... useeffect running again?')
+            // get messages from local storage
             getMessage()
-            // TODO pull prekey bundle
-            if (localStorage.getItem(`key_${id}`)) {
-                let { identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
+
+            // start session
+            const address = new SignalProtocolAddress(recipientUsername, 1)
+            const sessionBuilder = new SessionBuilder(store, address)
+            console.log('in useeffect... starting session, recip address:')
+
+            // process prekeys
+            const processPrekeys = async (prekeys) => {
+                console.log('in processPrekeys.... for user ' + userSession.username)
+                console.log(prekeys)
+                await sessionBuilder.processPreKey(prekeys)
+            }
+
+            // Get prekeys bundle
+            if (localStorage.getItem(`key_${id}`)) { // from browser local storage
+                let { registrationId, identityPubKey, signedPreKey, oneTimePreKeys } = JSON.parse(localStorage.getItem(`key_${id}`))
                 identityPubKey = binaryStringToArrayBuffer(identityPubKey)
                 signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
                 signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
                 oneTimePreKeys.forEach(key => {
                     key.publicKey = binaryStringToArrayBuffer(key.publicKey)
                 })
-                setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
-            } else {
+                setPreKeyBundle({ registrationId, identityPubKey, signedPreKey, oneTimePreKeys })
+
+                processPrekeys({ registrationId, identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                    .catch(console.error)
+            } else { // from server, then save to browser local storage
                 axios.get(`http://localhost:4000/room/${id}`)
                     .then(res => {
                         let { user } = res.data
                         user.forEach(value => {
-                            if (userSession.userId !== value._id) {
-                                let { identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
-                                localStorage.setItem(`key_${id}`, JSON.stringify({ identityPubKey, signedPreKey, oneTimePreKeys }))
+                            if (userSession.userId !== value._id) { // get prekeys from recipient user
+                                console.log(value)
+                                let { uid, identityPubKey, signedPreKey, oneTimePreKeys } = value.prekeys
+                                localStorage.setItem(`key_${id}`, JSON.stringify({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys }))
                                 identityPubKey = binaryStringToArrayBuffer(identityPubKey)
                                 signedPreKey.publicKey = binaryStringToArrayBuffer(signedPreKey.publicKey)
                                 signedPreKey.signature = binaryStringToArrayBuffer(signedPreKey.signature)
                                 oneTimePreKeys.forEach(key => {
                                     key.publicKey = binaryStringToArrayBuffer(key.publicKey)
                                 })
-                                setPreKeyBundle({ identityPubKey, signedPreKey, oneTimePreKeys })
+                                setPreKeyBundle({ registrationId: uid, identityPubKey, signedPreKey, oneTimePreKeys })
+
+                                processPrekeys({ registrationId: uid, identityKey: identityPubKey, signedPreKey, oneTimePreKeys })
+                                    .catch(console.error)
                             }
                         })
                     }).catch(err => {
                         console.log(err)
                     })
             }
+
         }
 
         // new message event + add new message to current messages thread
-        socket.current.on('receive', ({ sender, message }) => {
+        socket.current.on('receive', async ({ sender, message }) => {
             // dont listen to receive event if sender is also you
             if (sender == userSession.username) return
 
-            // TODO - refactor adding new message - for this and socket.on(receive)
+            // decrypt
+            console.log('in socket receive....')
+            console.log('message is:')
+            console.log(message)
+            console.log(recipientUsername)
+            const address = new SignalProtocolAddress(recipientUsername, 1)
+            console.log(address)
+            const sessionCipher = new SessionCipher(store, address)
+            console.log(sessionCipher)
+            let { type, body } = message
+
+            let plaintext = new Uint8Array().buffer
+            if (type === 3) {
+              plaintext = await sessionCipher.decryptPreKeyWhisperMessage(
+                body,
+                "binary"
+              ).catch((e) => {
+                console.log('error after decrypt....?')
+                console.log(e)
+            })
+            } else if (type === 1) {
+              plaintext = await sessionCipher.decryptWhisperMessage(
+                body,
+                "binary"
+              ).catch((e) => {
+                console.log('error after decrypt....?')
+                console.log(e)
+                })
+            }
+
+            const stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
+            console.log('stringPlaintext:');
+            console.log(stringPlaintext);
+
+            // refactor adding new message - for this and socket.on(receive)
             let newMessage = {
                 username: sender || 'other person....',
-                message: message,
+                message: stringPlaintext,
             }
 
             // add new message to thread
             setMessages(messages => [...messages, newMessage])
-
-            // TODO - fix scroll postion...
-            // new message scroll into the bottow of thread
-            // newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
         })
-
-        // user joined
-        // socket.current.on('joined', () => {
-        //     console.log('other user joined')
-        //     sendable.current = true
-        //     console.log(sendable.current);
-        // })
-
-        // user left
-        // socket.current.on('left', () => {
-        //     console.log('other user left')
-        //     sendable.current = false
-        //     console.log(sendable.current);
-        // })
 
         // unmount component --> disconnect socket
         return () => {
@@ -161,14 +213,13 @@ function Room() {
         // ignore when input field is empty
         if (messageRef.current.value === '') return
 
-        // TODO - refactor into new func
         // call server to create new room
         if (id == 'new') {
             let room = {
                 sender: userSession,
                 receiver: receipientRef.current.value
             }
-            // const res = await axios.post('http://localhost:4000/room/createroom', room);
+
             axios.post('http://localhost:4000/room/createroom', room)
                 .then(res => {
                     if (res.status === 200) {
@@ -204,7 +255,7 @@ function Room() {
         }
     }
 
-    const addMessage = () => {
+    const addMessage = async () => {
         let newMessage = {
             username: userSession.username,
             message: messageRef.current.value,
@@ -215,12 +266,23 @@ function Room() {
 
         storeMessage([...messages, newMessage])
 
-        // TODO - fix scroll postion...
-        // new message scroll into the bottow of thread
-        //newMessageContainer.current.scrollIntoView(true, { behavior: 'smooth' })
+        // encrypt
+        console.log('in socket sending....')
+        const address = new SignalProtocolAddress(recipientUsername, 1)
+        console.log(address)
+        const sessionCipher = new SessionCipher(store, address)
+
+        let ciphertext = await sessionCipher.encrypt(new TextEncoder().encode(messageRef.current.value).buffer)
+        console.log('message:')
+        console.log(messageRef.current.value)
+
+        console.log('ciphertext:')
+        console.log(ciphertext)
 
         // emit new message to socket
-        socket.current.emit('message', { sender: userSession.username, message: messageRef.current.value })
+        socket.current.emit('message', { sender: userSession.username, message: ciphertext })
+
+        // clear message chat input
         messageRef.current.value = ''
     }
 

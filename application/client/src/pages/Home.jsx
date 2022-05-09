@@ -38,13 +38,12 @@ function Home() {
       const result = await axios.get('http://localhost:4000/room/allrooms', { params: { uid: userId } })
       console.log(result.data)
 
-      setRooms(result.data.rooms);
+      setRooms(result.data.rooms)
+      localStorage.setItem('rooms', JSON.stringify(result.data.rooms))
     }
   }, [])
 
   return (
-    // TODO - if no user in localstorage --> login page
-    // TODO - else, show all messages page
     <div className='container mt-3' style={{ maxWidth: "750px" }}>
       {userSession && userSession.username ? (
         <div>
