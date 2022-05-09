@@ -38,7 +38,6 @@ function Room({ store }) {
     const navigate = useNavigate()
     const height = useWindowSize()
 
-    const newMessageContainer = useRef()
     const [toast, setToast] = useState(false)
     const [toastMessage, setToastMessage] = useState('')
 
@@ -91,9 +90,6 @@ function Room({ store }) {
     // Handle Socket IO listening events
     // NOTES: This side effect would run once after component mounting
     useEffect(() => {
-        // connect
-        //socket.on('connect', () => console.log(socket.id))
-        //console.log(socketRef.current);
 
         // Get prekeys bundle for state
         if (id !== 'new') {
@@ -159,7 +155,7 @@ function Room({ store }) {
             // dont listen to receive event if sender is also you
             if (sender == userSession.username) return
 
-            // TODO - decrypt
+            // decrypt
             console.log('in socket receive....')
             console.log('message is:')
             console.log(message)
@@ -193,7 +189,7 @@ function Room({ store }) {
             console.log('stringPlaintext:');
             console.log(stringPlaintext);
 
-            // TODO - refactor adding new message - for this and socket.on(receive)
+            // refactor adding new message - for this and socket.on(receive)
             let newMessage = {
                 username: sender || 'other person....',
                 message: stringPlaintext,
@@ -202,20 +198,6 @@ function Room({ store }) {
             // add new message to thread
             setMessages(messages => [...messages, newMessage])
         })
-
-        // user joined
-        // socket.current.on('joined', () => {
-        //     console.log('other user joined')
-        //     sendable.current = true
-        //     console.log(sendable.current);
-        // })
-
-        // user left
-        // socket.current.on('left', () => {
-        //     console.log('other user left')
-        //     sendable.current = false
-        //     console.log(sendable.current);
-        // })
 
         // unmount component --> disconnect socket
         return () => {
@@ -231,7 +213,6 @@ function Room({ store }) {
         // ignore when input field is empty
         if (messageRef.current.value === '') return
 
-        // TODO - refactor into new func
         // call server to create new room
         if (id == 'new') {
             let room = {
@@ -285,7 +266,7 @@ function Room({ store }) {
 
         storeMessage([...messages, newMessage])
 
-        // TODO - encrypt
+        // encrypt
         console.log('in socket sending....')
         const address = new SignalProtocolAddress(recipientUsername, 1)
         console.log(address)

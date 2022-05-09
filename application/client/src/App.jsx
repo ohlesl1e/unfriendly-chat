@@ -2,8 +2,6 @@ import './App.css'
 import React, { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useNavigate } from 'react-router'
-import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript'
-import axios from 'axios'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Room from './pages/Room'
@@ -25,13 +23,12 @@ function App() {
     })
 
     const logout = () => {
-        sessionStorage.removeItem("unfriendly_id")
-        sessionStorage.removeItem("unfriendly_session")
-        sessionStorage.removeItem("unfriendly_user")
-        setUserSession({})
+        setUserSession(null)
+        sessionStorage.clear()
+        localStorage.clear()
 
         navigate('/')
-        window.location.reload(false)
+        window.location.reload()
     }
 
     useEffect(() => {
@@ -79,7 +76,6 @@ function App() {
 
 
     return (
-        // TODO - add log out button in navbar
         <div className="App">
             <nav className="navbar navbar-dark bg-dark sticky-top">
                 <div className="container">

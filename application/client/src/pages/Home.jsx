@@ -44,8 +44,6 @@ function Home() {
   }, [])
 
   return (
-    // TODO - if no user in localstorage --> login page
-    // TODO - else, show all messages page
     <div className='container mt-3' style={{ maxWidth: "750px" }}>
       {userSession && userSession.username ? (
         <div>
