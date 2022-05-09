@@ -29,7 +29,7 @@ sorting=none
     Unfriendly Chat\\
     \large Team Wu-Tang LAN}
 \author{Leslie Zhou (team lead)\\ Khanh Nguyen \\ Warren Singh}
-\date{\today}
+\date{May 8, 2022}
 
 \begin{document}
 \maketitle
@@ -61,8 +61,8 @@ The remainder of this report will details the overview, methods, and results of 
 \subsection{Overview}
 The actual implementation of the project involves the connecting of a user facing react web chat application with the actual implementation of the cryptographic protocols and algorithms, which are hidden from the user.
 \par A separate server instance is used to store the pre-keys for the initial part of the Signal protocol (which is elaborated on in detail in the Methods section immediately following). 
-\par Various so-called cryptographic primitives (which are, in other words, the basic building blocks which make up systems for encryption and security: common examples are one-way hash functions or onion routing/proxy server based 'mix networks') are relied on in the course of the implementation of the actual cryptographic protocols, specifically public/private key pairs for signing from elliptic curve 25519 Diffie-Hellman functions, AES 256 bit encryption for cleartext/ciphertext conversion with respect to the user-generated messages, and HKDF for the key derivation (so-called 'ratcheting') functionality. (more details on these in the methods section which follows)
-\par The authors wish to thank at this time in particular M. Marlinspike and his colleagues at the Signal Foundation\parencite{website:sigfound}, as well as R. Schmidt and M. E. Johnson at Privacy Research LLC \parencite{website:prllc} for their work and generosity. Due to the time constraints of this project, as well as the relatively limited technical expertise and experience of the project team, use of open source libraries and documentation in the project implementation proved necessary under the scope and bounds of the work done. Specific citations follow in the text where appropriate, but in general the materials that these two groups made publically available were very helpful in the research and implementation process. \parencite{website:signal-docs}\parencite{website:prggh}\parencite{website:siglibjavascript}\parencite{website:prglibsigtypescript}\parencite{website:prglibsigdemo}
+\par Various so-called cryptographic primitives (which are, in other words, the basic building blocks which make up systems for encryption and security: common examples are one-way hash functions or onion routing/proxy server based \textit{mix networks}) are relied on in the course of the implementation of the actual cryptographic protocols, specifically public/private key pairs for signing from elliptic curve 25519 Diffie-Hellman functions, AES 256 bit encryption for cleartext/ciphertext conversion with respect to the user-generated messages, and HKDF for the key derivation (so-called \textit{ratcheting}) functionality. (more details on these in the methods section which follows)
+\par The authors wish to thank at this time in particular M. Marlinspike, T. Perrin, and their colleagues at the Signal Foundation\parencite{website:sigfound}, as well as R. Schmidt and M. E. Johnson at Privacy Research LLC \parencite{website:prllc} for their work and generosity. Due to the time constraints of this project, as well as the relatively limited technical expertise and experience of the project team, use of open source libraries and documentation in the project implementation proved necessary under the scope and bounds of the work done. Specific citations follow in the text where appropriate, but in general the materials that these two groups made publically available were very helpful in the research and implementation process. \parencite{website:signal-docs}\parencite{website:prggh}\parencite{website:siglibjavascript}\parencite{website:prglibsigtypescript}\parencite{website:prglibsigdemo}
 \par A high-level illustrative flowchart of the project overview is shown on the next page.
 
 \begin{figure}[h!]
@@ -76,21 +76,76 @@ The actual implementation of the project involves the connecting of a user facin
 \subsection{Method(s)}
 %Elaborate the core components in the workflow of the design, one in each subsection. As for each component, describe the method(s) used in detail.
 \subsubsection{React front end}
-\subsubsection{Server back end}
+Our web messaging application uses “React”, a JavaScript frontend library, to implement the user interface in a component oriented approach. We have four main pages in this application: “Home”, “Room”, “Login” and “Signup”. “Home” page appears differently for guests versus logged in users. For guest users, they see a simple welcome page with two call-to-action (CTA) buttons to prompt them to log in or sign up in order to use the chat application. Once users log in, they would be able to see a contact list with whom they have messaged before, or start a new message with new users. “Room” page serves as the main messaging feature which can have two different use cases. For the first use case, a user can start a new conversation with a new user by entering their username and a chat message; this will effectively create a new room between the two users. For the second use case, a user can already click on a room from the “Home” page to get to the existing room previously created with another user. “Signup” and “Login” pages function as a way for users to create an account to then log in and use the chat application. They both require users to enter username and password. “Signup” however does also require the user's email.
+\par The messaging feature for this application is implemented using “Socket.IO”, an event-driven JavaScript library that enables real-time, bi-directional communication between web clients and servers. To send a message from a “Room”, we emit a socket event “message” to the server. To receive a message, we listen for a socket event “receive” sent from the server. In addition, we use “Axios”, a promise-based HTTP client, to send HTTP requests to the server.
+\par Lastly, our application relies on the Signal Protocol for end-to-end encryption via the “libsignal-protocol-typescript” package \parencite{website:prglibsigtypescript}, along with its dependencies and documentation/demonstration libraries \parencite{website:prggh}\parencite{website:prglibsigdemo}\parencite{website:prglibsigtypescriptCurve25519}\parencite{website:prglibsigtypescriptCurve25519rawC}. This package allows us to create the necessary identity keys, start sessions after key exchange, and encrypt/decrypt messages. After generation of the pre-key bundle, our implementation saves it to the browser’s local storage as well as in the server’s database. Additionally, we also implemented the “SignalProtocolStore”, an in-memory key value store for the pre-key, as outlined in documentation and so on from the Signal Protocol SDK.
+
+
+\subsubsection{Server Back End}
+Our server uses NodeJS with Express as the web framework, Socket.IO for realtime communication and MongoDB as database. The main functions of the server are handling authentication, managing prekey bundles for chat room sessions, and passing messages in ciphertext. 
+
+\par All REST requests to the server are split into two routes, "/auth" and "/room".
+
+\par In route /auth, there are three endpoints:
+    \begin{itemize}
+        \item POST /register - Creating new user
+        \item POST /login - Authenticate user
+        \item POST /storekey - Store prekey bundle for the user
+    \end{itemize}
+    
+
+\par In route /room, there are three endpoints:
+    \begin{itemize}
+        \item GET /allrooms - Get all the rooms(id and usernames) that the user is in
+        \item POST /createroom - Create room for two users
+        \item GET  /:roomid - Get the usernames and prekey bundles of a room
+    \end{itemize}
+    
+\par Users click on the desired chat room, which then passes the room ID into the front-end API, which uses Socket.IO to connect them to the right room.
+
+\par \textbf{Database Schema:}
+\begin{verbatim}
+User
+    id: ObjectId, required, unique
+    username: String, required, unique
+    email: String, required, unique
+    password: String, required
+    salt: String, required
+    prekeys: Object
+        id: String
+        identityPubKey: String
+        signedPrekey: Object
+            keyId: Int
+            publicKey: String
+            signature: String
+        oneTimePreKeys: Array
+            [ { 
+                keyId: Int
+                publicKey: String
+            } ]
+\end{verbatim}
+
+\par \textbf{Room:}
+\begin{verbatim}
+    id: ObjectId, required, unique
+    user: Array
+        [ User: ObjectId ]
+\end{verbatim}
+
 \subsubsection{Pre-Key Caching}
 Each user, on registration to the chat service (or, more generally, whatever service is being provided) has a set of keys generated by the application service, some of which are sent to a server for storage and later use. These keys are used in protocol for creation and verification of Edwards-curve Digital Signature Algorithm (EdDSA) compatible digital signatures, as well as for the actual keys sent to the server. \parencite{website:sigdocXEdDSA} 
-\par The keys sent to the server form a set of elliptic curve public keys, containing a user identity key, a signed pre-key, a pre-key signature (comprised of a signed identity and signed pre-key), and a set of one-time pre-keys \parencite{website:sigdocX3DH} (the actual number of these one-time pre-keys is not defined, but in use is typically more than ten or so, with automatic generation and uploading for 'refilling' to the server when the number runs lower than some developer-defined amount).
+\par The keys sent to the server form a set of elliptic curve public keys, containing a user identity key, a signed pre-key, a pre-key signature (comprised of a signed identity and signed pre-key), and a set of one-time pre-keys \parencite{website:sigdocX3DH} (the actual number of these one-time pre-keys is not defined, but in use is typically more than ten or so, with automatic generation and uploading for refilling (so to speak) to the server when the number runs lower than some developer-defined amount).
 \par The actual implementation of the elliptic curve functions is based on (open-source) C libraries (which is typical for lower-level encryption processes, since lower level languages enable easier access to raw calculations and faster computations), which are then wrapped in higher level languages for access and implementation. \parencite{website:prglibsigtypescriptCurve25519}\parencite{website:prglibsigtypescriptCurve25519rawC}
 \par Here in this implementation, we note that the specific elliptic curve used is Curve 25519.
 
 \subsubsection{Triple Diffie-Hellman exchange}
 Suppose we have a user Alice who registers with a messaging application which implements the Signal Protocol and wishes to message Bob, another user of the messaging application. In this case, they must establish a shared secret to begin trading messages which each can in turn encrypt and decrypt. 
-\par They do this by using a variant of the Diffie-Hellman protocol known as the triple Diffie-Hellman exchange (X3DH). X3DH uses five elliptic curve public keys, which include both Alice and Bob's public identity keys ($IK_A, IK_B$ respectively), as well as one of Bob's pre-keys ($OPK_B$) and Bob's signed prekey bundle ($SPK_B$).\parencite{website:sigdocX3DH}
+\par They do this by using a variant of the Diffie-Hellman protocol known as the triple Diffie-Hellman exchange (X3DH). X3DH uses five elliptic curve public keys, which include both Alice and Bob's public identity keys ($\text{IK}_\text{A}, \text{IK}_\text{B}$ respectively), as well as one of Bob's pre-keys ($\text{OPK}_\text{B}$) and Bob's signed pre-key bundle ($\text{SPK}_\text{B}$).\parencite{website:sigdocX3DH}
 \par Then, the procedure performs (for Alice) a Diffie-Hellman exchange up to four times (but at least three times) in the following way: 
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=10cm]{images/x3dh.png}
+    \includegraphics[width=\textwidth]{images/x3dh.png}
     \caption{An overview of the Triple Diffie-Hellman exchange\parencite{website:sigdocX3DH}}
     \label{fig:my_label2}
 \end{figure}
@@ -109,34 +164,103 @@ The Double Ratchet Algorithm is most relevant once a communication session is es
 \par Each participant keeps two chains of keys, where the sending chain of Alice matches the receiving chain of Bob, and vice versa such that they can send and receive encrypted messages.
 \par The astute reader might here find an issue: if an adversary got a hold of a key, they might not be able to go backward and derive \textit{previous} keys in order to read previous messages in the conversation history, but they would be able to use the KDF (since the specifications are open source, there are a limited number of possible KDFs in use for any service which implements the Signal Protocol) to get a hold of any and all \textit{future} keys, thus compromising the integrity of any following communications after the inital key disclosure.
 \par This is where the second ratchet comes into play. Each message contains within its header a new input for a new Diffie-Hellman exchange, and each party then feeds the resulting shared secret into the input for the KDF. Thus the KDF has two inputs: the previous key, and this new shared Diffie-Hellman secret, which provides additional entropy.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=10cm]{images/1.png}
+    \caption{KDF chain inputs\parencite{website:sigdocdoubleratchet}}
+    \label{fig:my_label2}
+\end{figure}
+
+\newpage 
 \par Thus, even if a key is obtained by an outside party, only the corresponding message is vulnerable; once the new input to the KDF is processed, the following key is secure since it cannot be obtained from just the previous key.
 \par Therefore, the Double Ratchet Algorithm provides secrecy for the communications it encrypts both forward and backward in sequence, and logically derives its name from this property. 
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{images/2.png}
+    \caption{Diffie-Hellman Ratchet steps in application \parencite{website:sigdocdoubleratchet}}
+    \label{fig:my_label2}
+\end{figure}
 
-\subsubsection{Analysis by Packet Examination}
+\newpage 
+\subsubsection{Analysis by Payload Examination}
 %how, results actually follow in results section below 
+Much of the functionality is hidden from the user, thus we rely on tools such as the console and debuggers to be able to figure out and show what is occurring on the inside of the encryption process as the application process is running.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{images/10.png}
+    \caption{Example cleartext, ciphertext, message keys, and initial vectors for user messages}
+    \label{fig:my_label2}
+\end{figure}
+
+\par We note that even though some of the cleartext is the same, the ciphertext, keys, and initial vectors vary (initial vectors are used for the AES-256 message encryption from cleartext to ciphertext). This is key for securing communications, related to an exercise lab from class as well, where if an encryption process sends the same cleartext to the same ciphertext always (the mapping is consistent), information can be obtained by an attacker which the users may not wish to disclose. 
 
 \newpage
 \section{Demo/Evaluation}
 \subsection{Experimental Setup}
 %Experimental Setup: Describe how the experiments/demo are conducted to evaluate the performance of the project. Name the hardware and/or software used in the experiments. Summarize the key parameters of the experiments in a table, if needed.
+We look into the source code of the “libsignal-protocol-typescript” package in order to identify where the encryption happens as well as the output from such methods. More specifically, the encryption happens in SessionCipher.encryptJob(). Once the React application is compiled and built, all the libraries are stored in “node\_modules”. Using Chrome browser, under the “Sources” tab from Chrome Developer Tools, we are able to locate the encryption method of interest and print out to the browser’s console the ciphertext, message key, and message initial vector for each of the plaintext messages. In addition, we also convert them from ArrayBuffer to String for readability and verification of the ciphertext and key generation.
+
+\par Due to the technical details of the frontend framework with respect to the implementation, as well as issues of time, expertise, and scope, exposing the application to the network for packet capture and analysis proved infeasible under the context. Instead, we performed payload analysis using console logs, debugger situations, and other such tools to examine and analyze the behaviour of our application software end product.
+
 
 \subsection{Results}
 %Results: Results could be numerical performance comparison or screenshots of demo. As for numerical performance comparison, evaluate the performance in terms of a certain metric in each subsection. The results must be illustrated in a table or a figure. Observation/analysis on the evaluation results must be included, which is often written in a sentence like “the performance of XXX method in terms of some metric(s) is XXX” or “the XXX method is XXX percent faster, cheaper, smaller, or otherwise better than XXX”. As for screenshots of demo, explain what the demo is for and the observations.
+The results presented are for a demonstration instance running of the application software, in logical sequence for a user logging in and then making use of the communications service.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{images/9.png}
+    \caption{\textbf{Landing page for the React application}}
+    \label{fig:my_label3}
+\end{figure}
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{images/8.png}
+    \caption{\textbf{Login page for the React application}}
+    \label{fig:my_label4}
+\end{figure}
+
+\newpage 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{images/6.png}
+    \caption{\textbf{User Landing page for the React application (after user has logged in)}}
+    \label{fig:my_label5}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{images/7.png}
+    \caption{\textbf{User view of a specific chat communication and history}}
+    \label{fig:my_label5}
+\end{figure}
+
+\newpage 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{images/5.png}
+    \caption{\textbf{User view of a specific chat communication and history}}
+    \label{fig:my_label5}
+\end{figure}
+
+
+\newpage 
 \section{Conclusion and Future Work}
 %The conclusion should restate the main activities and contributions of your research project. Future work is not mandatory, which could identify the future directions to improve the work.
 The Signal Protocol, apart from being an established industry standard approach for the securing of network communications, is a well studied cryptographic approach for security. \parencite{formalAnalysisSig}\parencite{autoFormalAnalysisSig}
 \par This may be credited in largest part to its open source nature: the protocol documentation is open for anyone to read \parencite{website:signal-docs}, as well as source code being openly available for one of its key implementations \parencite{website:sigOpenSource}. 
-\par However, the protocol as described here and as implemented in our project has limitations. The protocol may be extended to more than two members, but in application this rapidly becomes unfeasible: sessions must establish X3DH exchanges from every member to every other member, and similarly for the header-based key updating between messages. Such group exchanges are in practice mediated by the Sesame algorithm \parencite{website:sigSesame}, but is outside the course of our project implementation (and thus this report).
+\par However, the protocol as described here and as implemented in our project has limitations. The protocol may be extended to more than two devices, but in application this rapidly becomes tricky. One user might delete a session, or wish to restore a session from a backup on a different device. It is also the case that the two participants might initiate a session at the same time, or they add or delete devices from their application software access usage. These kinds of situations are in practice mediated by the Sesame algorithm \parencite{website:sigSesame}, but is outside the course of our project implementation (and thus this report).
 \par Furthermore, there are limitations to the practical security that the Signal Protocol provides. The protocol does not prohibit an attacker from simply spying on the screen of the device which the user is communicating through (a so-called \textit{shoulder surfing} attack), nor does it prevent a keylogger from being able to read what a user is sending. Any security which the protocol assures (which, as mentioned before, has been audited by reputable, peer-reviewed research \parencite{formalAnalysisSig}\parencite{autoFormalAnalysisSig}) is solely on the application software and network levels. It does not extend to device and physical security, either by design or by practice.
-\par Further work in placing secure systems at the hands of users is ongoing, and is a promising area of research and development, especially as the increasing collection and usage of individual data becomes more and more relevant in governmental and industry settings.
+\par Further work in placing secure systems at the hands of users is ongoing, and is a promising area of research and development, especially as the increasing collection and usage of individual data becomes more and more relevant in governmental, societal, and industry settings.
 
 
 
 
 \newpage
-\section{References}
+\section{Bibliography}
 \printbibliography
 
 \end{document}
