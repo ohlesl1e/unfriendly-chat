@@ -10,5 +10,5 @@ scanners:
 languages:
   - javascript
 
-resource
+resource:
   - true
