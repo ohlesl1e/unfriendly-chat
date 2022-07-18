@@ -9,6 +9,3 @@ scanners:
 
 languages:
   - javascript
-
-resource:
-  - true
